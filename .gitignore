@@ -1,0 +1,95 @@
+# ============================================================
+#  IntelliProcure AI – .gitignore
+#  Prevents secrets, build artifacts, and OS junk from
+#  being committed to source control.
+# ============================================================
+
+# ── SECRETS (CRITICAL – never commit these) ──────────────────
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# ── Python / Backend ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+venv/
+env/
+.venv/
+ENV/
+
+# Python test/coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# SQLite dev database
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Node.js / Frontend ───────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite build output
+frontend/dist/
+frontend/.vite/
+
+# TypeScript build
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ── IDE & Editor ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.orig
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+*.out
+
+# ── Docker ───────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Certificates & Keys ──────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+.env
+backend/.env
+frontend/.env
+venv/
+node_modules/
+__pycache__/
