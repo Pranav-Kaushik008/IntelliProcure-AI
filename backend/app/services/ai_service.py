@@ -167,7 +167,8 @@ class AIPredictiveEngine:
             risk_score += 30.0
             reasons.append(f"Unusual Procurement Behavior: {split_invoice_count} split invoices detected just below approval thresholds ($8k–$10k / $20k–$25k range)")
 
-        if po_status not in ["issued", "acknowledged", "partially_received", "fully_received"]:
+        po_status_str = str(po_status).lower()
+        if not any(valid_state in po_status_str for valid_state in ["issued", "acknowledged", "partially_received", "fully_received", "approved", "completed"]):
             risk_score += 20.0
             reasons.append(f"Unusual Procurement Behavior: Invoice linked to unapproved/draft PO status ('{po_status}')")
 

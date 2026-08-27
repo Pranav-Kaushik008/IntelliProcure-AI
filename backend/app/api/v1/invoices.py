@@ -154,7 +154,7 @@ async def list_invoices(
             "fraud_flags": inv.fraud_flags or [],
             "matching_status": (
                 "3-Way Matched" if (inv.match_status == "MATCHED" or (inv.status in [InvoiceStatus.MATCHED, InvoiceStatus.APPROVED, InvoiceStatus.PAID] and inv.match_status != "MISMATCHED"))
-                else ("Discrepancy" if inv.match_status == "MISMATCHED" or (inv.fraud_risk_score and inv.fraud_risk_score > 30)
+                else ("Discrepancy" if inv.match_status == "MISMATCHED"
                 else ("Partially Matched" if inv.match_status == "PARTIALLY_MATCHED"
                 else "Under Review"))
             ),
@@ -231,13 +231,13 @@ async def create_invoice(
             pass
 
     # Run 3-Way PO Matching Audit
-    historical_count = db.query(Invoice).filter(Invoice.supplier_id == supplier.id).count()
+    historical_count = db.query(Invoice).filter(Invoice.supplier_id == supplier.id, Invoice.is_deleted == False).count()
 
     audit_result = AIPredictiveEngine.audit_invoice_fraud(
         invoice_amount=total_amt,
         po_amount=po.total_amount if po else 0.0,
-        po_status=po.status if po else "none",
-        is_duplicate_number=db.query(Invoice).filter(Invoice.invoice_number == inv_num).count() > 0,
+        po_status=po.status.value if po and hasattr(po.status, 'value') else (po.status if po else "none"),
+        is_duplicate_number=db.query(Invoice).filter(Invoice.invoice_number == inv_num, Invoice.is_deleted == False).count() > 0,
         historical_vendor_invoices=historical_count
     )
 
