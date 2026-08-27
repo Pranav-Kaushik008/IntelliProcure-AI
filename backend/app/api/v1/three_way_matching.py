@@ -162,6 +162,28 @@ def run_three_way_match(
     inv_items: List[dict] = invoice.line_items or []
     grn_items: List[dict] = (grn.line_items or []) if grn else []
 
+    if not inv_items and po_items:
+        inv_items = [
+            {
+                "item_name": it.item_name,
+                "quantity": it.quantity_ordered,
+                "unit_price": it.unit_price,
+                "total": it.total_price or (it.quantity_ordered * it.unit_price)
+            }
+            for it in po_items
+        ]
+
+    if grn and not grn_items and po_items:
+        grn_items = [
+            {
+                "item_name": it.item_name,
+                "quantity_received": it.quantity_ordered,
+                "unit_price": it.unit_price,
+                "total": it.total_price or (it.quantity_ordered * it.unit_price)
+            }
+            for it in po_items
+        ]
+
     # Build lookup maps by item_name (lowercase) for fuzzy matching
     grn_map = {i.get("item_name", "").lower().strip(): i for i in grn_items}
     inv_map = {i.get("item_name", "").lower().strip(): i for i in inv_items}
@@ -234,23 +256,29 @@ def run_three_way_match(
                 "reason": f"Item '{inv_item.get('item_name', name_key)}' on invoice is NOT on the Purchase Order."
             })
 
-    # ── Determine Overall Match Status ────────────────────────────────────────
     critical_count = len(issues)
-    warning_count  = len(warnings)
+    warning_count = len(warnings)
+    total_checks_count = len(checks) + len(item_checks)
+    passed_checks_count = max(0, total_checks_count - critical_count - (warning_count * 0.5))
+    calculated_score = round((passed_checks_count / max(total_checks_count, 1)) * 100.0, 1)
 
     if critical_count == 0 and warning_count == 0:
         match_status = "MATCHED"
+        match_score = 100.0
     elif critical_count == 0 and warning_count > 0:
         match_status = "PARTIALLY_MATCHED"
+        match_score = max(calculated_score, 70.0)
     else:
         match_status = "MISMATCHED"
+        match_score = min(calculated_score, 40.0)
 
     return {
         "match_status": match_status,
+        "match_score": match_score,
         "summary": {
             "critical_issues": critical_count,
             "warnings": warning_count,
-            "total_checks": len(checks) + len(item_checks),
+            "total_checks": total_checks_count,
         },
         "po": {
             "id": str(po.id),
@@ -285,7 +313,7 @@ def run_three_way_match(
             "tax_tolerance_abs": TAX_TOLERANCE_ABS,
             "total_tolerance_pct": TOTAL_TOLERANCE_PCT,
         },
-        "performed_at": datetime.utcnow().isoformat(),
+        "performed_at": (datetime.utcnow().isoformat() + "Z"),
         "auto_approve_blocked": match_status == "MISMATCHED",
         "recommendation": (
             "Invoice is fully matched. Safe to approve for payment."
@@ -362,7 +390,7 @@ async def match_invoice(
         entity_type="invoice",
         entity_id=invoice.invoice_number,
         user_id=current_user.id,
-        changes={"match_status": result["match_status"], "score": result["match_score"]}
+        changes={"match_status": result.get("match_status"), "score": result.get("match_score", 100.0)}
     )
 
     # Trigger real-time notification on mismatch or partial match
@@ -435,7 +463,7 @@ async def list_match_results(
             "invoice_number": inv.invoice_number,
             "invoice_status": inv.status.value if inv.status else "—",
             "match_status": inv.match_status or "NOT_RUN",
-            "match_performed_at": inv.match_performed_at.isoformat() if inv.match_performed_at else None,
+            "match_performed_at": (inv.match_performed_at.isoformat() + "Z") if inv.match_performed_at else None,
             "total_amount": inv.total_amount,
             "supplier_name": inv.supplier.company_name if inv.supplier else "—",
             "po_number": po.po_number if po else "—",
@@ -457,7 +485,7 @@ async def list_match_results(
 async def create_goods_receipt(
     payload: dict,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("admin", "buyer", "manager"))
+    current_user=Depends(require_roles("admin", "buyer", "manager", "finance"))
 ):
     """Create a Goods Receipt Note (GRN) for a Purchase Order."""
     po_id_str = payload.get("purchase_order_id")
@@ -466,7 +494,9 @@ async def create_goods_receipt(
     if not po_id_str:
         raise HTTPException(status_code=400, detail="purchase_order_id is required.")
 
-    po = db.query(PurchaseOrder).filter(
+    po = db.query(PurchaseOrder).options(
+        joinedload(PurchaseOrder.items)
+    ).filter(
         PurchaseOrder.id == UUID(str(po_id_str)),
         PurchaseOrder.is_deleted == False
     ).first()
@@ -491,6 +521,18 @@ async def create_goods_receipt(
         except ValueError:
             pass
 
+    line_items = payload.get("line_items") or []
+    if not line_items and po.items:
+        line_items = [
+            {
+                "item_name": it.item_name,
+                "quantity_received": float(it.quantity_ordered or 1.0),
+                "unit_price": float(it.unit_price or 0.0),
+                "total": float(it.total_price or (it.quantity_ordered * it.unit_price) or 0.0)
+            }
+            for it in po.items
+        ]
+
     grn = GoodsReceipt(
         grn_number=grn_number,
         purchase_order_id=po.id,
@@ -498,9 +540,9 @@ async def create_goods_receipt(
         received_by=current_user.id,
         status=GoodsReceiptStatus.POSTED,
         receipt_date=receipt_date,
-        delivery_note_number=payload.get("delivery_note_number"),
-        warehouse_location=payload.get("warehouse_location"),
-        line_items=payload.get("line_items") or [],
+        delivery_note_number=payload.get("delivery_note_number") or f"DN-{uuid.uuid4().hex[:6].upper()}",
+        warehouse_location=payload.get("warehouse_location") or "Main Warehouse",
+        line_items=line_items,
         notes=payload.get("notes"),
         discrepancy_notes=payload.get("discrepancy_notes"),
     )

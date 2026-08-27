@@ -9,6 +9,7 @@ import {
   MdContentCopy, MdBlock
 } from "react-icons/md";
 import { api } from "../../contexts/AuthContext";
+import { formatDateTime } from "../../utils/dateUtils";
 
 const STATUS_CONFIG = {
   MATCHED:           { color: "#10b981", bg: "rgba(16,185,129,0.12)", icon: <MdCheckCircle />, label: "Matched" },
@@ -295,7 +296,7 @@ function MatchModal({ result, invoice, onClose, onGRNCreate }) {
             Quantity exact •{" "}
             Tax ±${result.tolerances?.tax_tolerance_abs} •{" "}
             Total ±{result.tolerances?.total_tolerance_pct}% •{" "}
-            Performed: {result.performed_at ? new Date(result.performed_at).toLocaleString() : "—"}
+            Performed: {formatDateTime(result.performed_at)}
           </div>
         </div>
       </motion.div>
@@ -314,10 +315,64 @@ function GRNModal({ poOptions, onClose, onSubmit }) {
   });
   const [newItem, setNewItem] = useState({ item_name: "", quantity_received: "", unit_price: "" });
 
+  useEffect(() => {
+    if (poOptions.length > 0 && !form.purchase_order_id) {
+      const firstPO = poOptions[0];
+      setForm(f => ({ ...f, purchase_order_id: firstPO.id }));
+      if (firstPO.items && firstPO.items.length > 0) {
+        const item = firstPO.items[0];
+        setNewItem({
+          item_name: item.item_name || "",
+          quantity_received: item.quantity_ordered || "",
+          unit_price: item.unit_price || ""
+        });
+      }
+    }
+  }, [poOptions, form.purchase_order_id]);
+
+  const handlePOSelect = (poId) => {
+    setForm(f => ({ ...f, purchase_order_id: poId }));
+    const selectedPO = poOptions.find(p => p.id === poId);
+    if (selectedPO && selectedPO.items && selectedPO.items.length > 0) {
+      const item = selectedPO.items[0];
+      setNewItem({
+        item_name: item.item_name || "",
+        quantity_received: item.quantity_ordered || "",
+        unit_price: item.unit_price || ""
+      });
+    }
+  };
+
   const addItem = () => {
     if (!newItem.item_name || !newItem.quantity_received) return;
-    setForm(f => ({ ...f, line_items: [...f.line_items, { ...newItem, quantity_received: parseFloat(newItem.quantity_received), unit_price: parseFloat(newItem.unit_price) || 0 }] }));
+    setForm(f => ({
+      ...f,
+      line_items: [
+        ...f.line_items,
+        {
+          item_name: newItem.item_name,
+          quantity_received: parseFloat(newItem.quantity_received),
+          unit_price: parseFloat(newItem.unit_price) || 0
+        }
+      ]
+    }));
     setNewItem({ item_name: "", quantity_received: "", unit_price: "" });
+  };
+
+  const handlePost = () => {
+    if (!form.purchase_order_id) {
+      toast.error("Please select a Purchase Order.");
+      return;
+    }
+    let items = [...form.line_items];
+    if (newItem.item_name && newItem.quantity_received) {
+      items.push({
+        item_name: newItem.item_name,
+        quantity_received: parseFloat(newItem.quantity_received),
+        unit_price: parseFloat(newItem.unit_price) || 0
+      });
+    }
+    onSubmit({ ...form, line_items: items });
   };
 
   return (
@@ -347,9 +402,17 @@ function GRNModal({ poOptions, onClose, onSubmit }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Purchase Order *</label>
-              <select value={form.purchase_order_id} onChange={e => setForm(f => ({ ...f, purchase_order_id: e.target.value }))}
-                style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border-color)", background: "#1e293b", color: "#f1f5f9", fontSize: 13 }}>
-                {poOptions.map(po => <option key={po.id} value={po.id}>{po.po_number}</option>)}
+              <select
+                value={form.purchase_order_id}
+                onChange={e => handlePOSelect(e.target.value)}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border-color)", background: "#1e293b", color: "#f1f5f9", fontSize: 13 }}
+              >
+                <option value="">-- Select Purchase Order --</option>
+                {poOptions.map(po => (
+                  <option key={po.id} value={po.id}>
+                    {po.po_number} {po.supplier_name ? `(${po.supplier_name})` : ""}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -403,7 +466,7 @@ function GRNModal({ poOptions, onClose, onSubmit }) {
             <button onClick={onClose} style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid var(--border-color)", background: "transparent", color: "var(--text-primary)", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
               Cancel
             </button>
-            <button onClick={() => onSubmit(form)} style={{
+            <button onClick={handlePost} style={{
               padding: "9px 22px", borderRadius: 10, border: "none", cursor: "pointer",
               background: "var(--gradient-brand)", color: "#fff", fontWeight: 700, fontSize: 13
             }}>

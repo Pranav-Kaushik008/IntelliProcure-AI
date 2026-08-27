@@ -152,7 +152,12 @@ async def list_invoices(
             "currency": inv.currency or "USD",
             "fraud_risk_score": inv.fraud_risk_score or 5.0,
             "fraud_flags": inv.fraud_flags or [],
-            "matching_status": "3-Way Matched" if inv.status == InvoiceStatus.MATCHED else ("Discrepancy" if inv.fraud_risk_score and inv.fraud_risk_score > 30 else "Under Review"),
+            "matching_status": (
+                "3-Way Matched" if (inv.match_status == "MATCHED" or (inv.status in [InvoiceStatus.MATCHED, InvoiceStatus.APPROVED, InvoiceStatus.PAID] and inv.match_status != "MISMATCHED"))
+                else ("Discrepancy" if inv.match_status == "MISMATCHED" or (inv.fraud_risk_score and inv.fraud_risk_score > 30)
+                else ("Partially Matched" if inv.match_status == "PARTIALLY_MATCHED"
+                else "Under Review"))
+            ),
             "line_items": inv.line_items or [],
             "attachment_url": inv.attachment_url,
             "created_at": inv.created_at.isoformat() if inv.created_at else None,
@@ -253,7 +258,15 @@ async def create_invoice(
         fraud_risk_score=audit_result["fraud_score"],
         fraud_flags=audit_result["fraud_flags"],
         is_duplicate=audit_result["is_duplicate"],
-        line_items=payload.get("line_items") or [],
+        line_items=payload.get("line_items") or ([
+            {
+                "item_name": it.item_name,
+                "quantity": float(it.quantity_ordered or 1.0),
+                "unit_price": float(it.unit_price or 0.0),
+                "total": float(it.total_price or (it.quantity_ordered * it.unit_price) or 0.0)
+            }
+            for it in (po.items if po and po.items else [])
+        ]),
         notes=payload.get("notes"),
         attachment_url=payload.get("attachment_url")
     )

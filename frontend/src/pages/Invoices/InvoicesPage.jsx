@@ -13,7 +13,8 @@ import {
   MdCloudUpload,
   MdRefresh,
   MdAdd,
-  MdDelete
+  MdDelete,
+  MdRemoveCircle
 } from "react-icons/md";
 import { api } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -79,7 +80,68 @@ export default function InvoicesPage() {
     tax_amount: "",
     discount_amount: "",
     notes: "",
+    line_items: [
+      { item_name: "", quantity: "", unit_price: "" }
+    ],
   });
+
+  const handlePOChange = (poId) => {
+    const selectedPO = purchaseOrders?.find((po) => po.id === poId);
+    if (selectedPO) {
+      const items = (selectedPO.items && selectedPO.items.length > 0)
+        ? selectedPO.items.map((it) => ({
+            item_name: it.item_name || "",
+            quantity: it.quantity_ordered || 1,
+            unit_price: it.unit_price || 0
+          }))
+        : [{ item_name: selectedPO.title || "PO Item", quantity: 1, unit_price: selectedPO.subtotal || selectedPO.total_amount }];
+
+      const subtotalCalc = items.reduce((acc, it) => acc + (Number(it.quantity) * Number(it.unit_price)), 0);
+
+      setFormData(f => ({
+        ...f,
+        purchase_order_id: poId,
+        supplier_id: selectedPO.supplier_id || f.supplier_id,
+        subtotal: subtotalCalc || selectedPO.subtotal || selectedPO.total_amount,
+        tax_amount: selectedPO.tax_amount || 0,
+        discount_amount: selectedPO.discount_amount || 0,
+        line_items: items
+      }));
+    } else {
+      setFormData(f => ({
+        ...f,
+        purchase_order_id: poId
+      }));
+    }
+  };
+
+  const handleItemChange = (idx, field, value) => {
+    const newItems = [...formData.line_items];
+    newItems[idx] = { ...newItems[idx], [field]: value };
+    const newSubtotal = newItems.reduce((acc, it) => acc + (Number(it.quantity || 0) * Number(it.unit_price || 0)), 0);
+    setFormData(f => ({
+      ...f,
+      line_items: newItems,
+      subtotal: newSubtotal > 0 ? newSubtotal : f.subtotal
+    }));
+  };
+
+  const handleAddItem = () => {
+    setFormData(f => ({
+      ...f,
+      line_items: [...f.line_items, { item_name: "", quantity: "", unit_price: "" }]
+    }));
+  };
+
+  const handleRemoveItem = (idx) => {
+    const newItems = formData.line_items.filter((_, i) => i !== idx);
+    const newSubtotal = newItems.reduce((acc, it) => acc + (Number(it.quantity || 0) * Number(it.unit_price || 0)), 0);
+    setFormData(f => ({
+      ...f,
+      line_items: newItems.length > 0 ? newItems : [{ item_name: "", quantity: "", unit_price: "" }],
+      subtotal: newSubtotal > 0 ? newSubtotal : ""
+    }));
+  };
 
   // ── Fetch Invoices from Backend API ─────────────────────────────────────────
   const { data: invoices, isLoading, isError, error, refetch, isFetching } = useQuery({
@@ -194,7 +256,7 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h1 className="page-title">Invoice Verification & 3-Way Matching</h1>
+          <h1 className="page-title">Invoice Verification </h1>
           <p className="page-subtitle">Automated PO matching, goods receipt audit, secure OCR upload, and fraud risk verification.</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -443,7 +505,7 @@ export default function InvoicesPage() {
             exit={{ opacity: 0 }}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            <motion.div className="card" style={{ width: 540, padding: 24 }}>
+            <motion.div className="card" style={{ width: 660, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", padding: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 700 }}>Create Invoice (3-Way PO Matching)</h3>
                 <button className="btn btn-ghost btn-sm" onClick={() => setIsCreateModalOpen(false)}>
@@ -465,6 +527,23 @@ export default function InvoicesPage() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div className="form-group">
+                    <label className="form-label">Link Purchase Order (PO)</label>
+                    <select
+                      className="form-control"
+                      style={{ color: "#f1f5f9", background: "#1e293b" }}
+                      value={formData.purchase_order_id}
+                      onChange={(e) => handlePOChange(e.target.value)}
+                    >
+                      <option value="">-- Standalone Invoice --</option>
+                      {purchaseOrders?.map((po) => (
+                        <option key={po.id} value={po.id}>
+                          {po.po_number} — ${po.total_amount.toLocaleString()} ({po.supplier_name})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
                     <label className="form-label">Supplier *</label>
                     <select
                       className="form-control"
@@ -481,35 +560,77 @@ export default function InvoicesPage() {
                       ))}
                     </select>
                   </div>
+                </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Link Purchase Order (PO)</label>
-                    <select
-                      className="form-control"
-                      style={{ color: "#f1f5f9", background: "#1e293b" }}
-                      value={formData.purchase_order_id}
-                      onChange={(e) => setFormData({ ...formData, purchase_order_id: e.target.value })}
+                {/* ── Billed Line Items Section ── */}
+                <div className="form-group" style={{ borderTop: "1px solid var(--border-color)", paddingTop: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <label className="form-label" style={{ fontWeight: 700, margin: 0 }}>
+                      Billed Line Items
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: "var(--primary)", fontSize: 12, fontWeight: 600 }}
+                      onClick={handleAddItem}
                     >
-                      <option value="">-- Standalone Invoice --</option>
-                      {purchaseOrders?.map((po) => (
-                        <option key={po.id} value={po.id}>
-                          {po.po_number} — ${po.total_amount.toLocaleString()}
-                        </option>
-                      ))}
-                    </select>
+                      <MdAdd fontSize={16} /> Add Item
+                    </button>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {formData.line_items.map((item, idx) => (
+                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 90px 110px 40px", gap: 8, alignItems: "center" }}>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Item description / name"
+                          value={item.item_name}
+                          onChange={(e) => handleItemChange(idx, "item_name", e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          min="1"
+                          className="form-control"
+                          placeholder="Qty"
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="form-control"
+                          placeholder="Unit Price ($)"
+                          value={item.unit_price}
+                          onChange={(e) => handleItemChange(idx, "unit_price", e.target.value)}
+                        />
+                        {formData.line_items.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: "#ef4444", padding: 4 }}
+                            onClick={() => handleRemoveItem(idx)}
+                            title="Remove item"
+                          >
+                            <MdRemoveCircle fontSize={18} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid var(--border-color)", paddingTop: 14 }}>
                   <div className="form-group">
-                    <label className="form-label">Subtotal ($)</label>
+                    <label className="form-label">Subtotal ($) *</label>
                     <input
                       type="number"
                       step="0.01"
                       className="form-control"
-                      placeholder="e.g. 4500.00"
+                      placeholder="e.g. 12000.00"
                       value={formData.subtotal}
                       onChange={(e) => setFormData({ ...formData, subtotal: e.target.value })}
+                      required
                     />
                   </div>
 
@@ -519,11 +640,28 @@ export default function InvoicesPage() {
                       type="number"
                       step="0.01"
                       className="form-control"
-                      placeholder="e.g. 500.00"
+                      placeholder="e.g. 0.00"
                       value={formData.tax_amount}
                       onChange={(e) => setFormData({ ...formData, tax_amount: e.target.value })}
                     />
                   </div>
+                </div>
+
+                {/* Total Preview */}
+                <div style={{
+                  padding: "10px 14px",
+                  borderRadius: 8,
+                  background: "var(--bg-app)",
+                  border: "1px solid var(--border-color)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  fontSize: 13
+                }}>
+                  <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Total Billed Amount:</span>
+                  <strong style={{ fontSize: 15, color: "var(--primary)" }}>
+                    ${(Number(formData.subtotal || 0) + Number(formData.tax_amount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                  </strong>
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
