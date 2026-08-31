@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Request Interceptor — attach JWT Access Token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
+  const token = sessionStorage.getItem("access_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -55,9 +55,12 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem("refresh_token");
+      const refreshToken = sessionStorage.getItem("refresh_token");
       if (!refreshToken) {
         isRefreshing = false;
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("refresh_token");
+        sessionStorage.removeItem("user");
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("user");
@@ -69,7 +72,7 @@ api.interceptors.response.use(
         const refreshRes = await axios.post(`${API_BASE}/auth/refresh?refresh_token=${refreshToken}`);
         const newAccessToken = refreshRes.data.access_token;
 
-        localStorage.setItem("access_token", newAccessToken);
+        sessionStorage.setItem("access_token", newAccessToken);
         api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
@@ -77,6 +80,9 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("refresh_token");
+        sessionStorage.removeItem("user");
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("user");
@@ -99,24 +105,27 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mount Effect — Verify active session via /auth/me
+  // Mount Effect — Verify active session via /auth/me from sessionStorage
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    const savedUser = localStorage.getItem("user");
+    // Clear legacy localStorage auth keys
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
+
+    const token = sessionStorage.getItem("access_token");
+    const savedUser = sessionStorage.getItem("user");
 
     if (token && savedUser) {
-      // Do NOT set user from localStorage yet — wait for backend to confirm the token is valid
       setIsLoading(true);
       api.get("/auth/me")
         .then((res) => {
           setUser(res.data);
-          localStorage.setItem("user", JSON.stringify(res.data));
+          sessionStorage.setItem("user", JSON.stringify(res.data));
         })
         .catch(() => {
-          // Token invalid or expired — force back to login
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("user");
+          sessionStorage.removeItem("access_token");
+          sessionStorage.removeItem("refresh_token");
+          sessionStorage.removeItem("user");
           setUser(null);
         })
         .finally(() => setIsLoading(false));
@@ -132,9 +141,9 @@ export function AuthProvider({ children }) {
       const response = await api.post("/auth/login", { email, password });
       const { access_token, refresh_token, user: userData } = response.data;
 
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-      localStorage.setItem("user", JSON.stringify(userData));
+      sessionStorage.setItem("access_token", access_token);
+      sessionStorage.setItem("refresh_token", refresh_token);
+      sessionStorage.setItem("user", JSON.stringify(userData));
 
       setUser(userData);
       toast.success(`Welcome back, ${userData.first_name || 'User'}! 🎉`);
@@ -155,6 +164,9 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore network errors during logout
     } finally {
+      sessionStorage.removeItem("access_token");
+      sessionStorage.removeItem("refresh_token");
+      sessionStorage.removeItem("user");
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
@@ -167,7 +179,7 @@ export function AuthProvider({ children }) {
     if (user) {
       const updated = { ...user, ...updates };
       setUser(updated);
-      localStorage.setItem("user", JSON.stringify(updated));
+      sessionStorage.setItem("user", JSON.stringify(updated));
     }
   };
 

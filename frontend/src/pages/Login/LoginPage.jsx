@@ -317,9 +317,9 @@ export default function LoginPage() {
       });
 
       const { access_token, refresh_token, user: userData } = response.data;
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-      localStorage.setItem("user", JSON.stringify(userData));
+      sessionStorage.setItem("access_token", access_token);
+      sessionStorage.setItem("refresh_token", refresh_token);
+      sessionStorage.setItem("user", JSON.stringify(userData));
 
       toast.success(`Welcome, ${userData.first_name || 'User'}! Signed in via ${ssoModal.toUpperCase()} 🎉`);
       window.location.href = "/dashboard";
