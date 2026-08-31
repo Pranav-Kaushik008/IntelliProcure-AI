@@ -277,6 +277,32 @@ async def get_contract(
     now = datetime.utcnow()
     days_remaining = (c.end_date - now).days if c.end_date else 999
 
+    # Ensure structured AI analysis is present
+    extracted_clauses = c.ai_key_clauses
+    identified_risks = c.ai_risk_assessment
+    expiry_terms = c.ai_expiry_terms
+    ai_risk_score = c.ai_risk_score
+    ai_summary = c.ai_summary
+
+    if not extracted_clauses or not isinstance(identified_risks, list) or not expiry_terms:
+        c_type_val = c.contract_type.value if hasattr(c.contract_type, "value") else str(c.contract_type)
+        ai_res = AIPredictiveEngine.analyze_contract_document(
+            title=c.title,
+            contract_type=c_type_val,
+            supplier_name=c.supplier.company_name if c.supplier else "Supplier",
+            start_date=c.start_date.strftime("%Y-%m-%d") if c.start_date else None,
+            end_date=c.end_date.strftime("%Y-%m-%d") if c.end_date else None,
+            contract_value=c.contract_value or 0.0,
+            auto_renew=bool(c.auto_renew),
+            notice_period_days=c.notice_period_days or 30
+        )
+        extracted_clauses = ai_res["extracted_clauses"]
+        identified_risks = ai_res["identified_risks"]
+        expiry_terms = ai_res["expiry_terms"]
+        ai_risk_score = ai_res["ai_risk_score"]
+        if not ai_summary:
+            ai_summary = ai_res["summary"]
+
     return {
         "id": str(c.id),
         "contract_number": c.contract_number,
@@ -294,11 +320,11 @@ async def get_contract(
         "notice_period_days": c.notice_period_days,
         "current_version": c.current_version or 1,
         "versions_history": c.versions_history or [],
-        "ai_summary": c.ai_summary,
-        "ai_risk_score": c.ai_risk_score or 15.0,
-        "extracted_clauses": c.ai_key_clauses or {},
-        "identified_risks": c.ai_risk_assessment or [],
-        "expiry_terms": c.ai_expiry_terms or {},
+        "ai_summary": ai_summary or c.ai_summary,
+        "ai_risk_score": ai_risk_score or 15.0,
+        "extracted_clauses": extracted_clauses or {},
+        "identified_risks": identified_risks if isinstance(identified_risks, list) else [],
+        "expiry_terms": expiry_terms or {},
         "notes": c.notes,
         "has_document": bool(c.document_file_path),
         "created_at": c.created_at.isoformat() if c.created_at else None,

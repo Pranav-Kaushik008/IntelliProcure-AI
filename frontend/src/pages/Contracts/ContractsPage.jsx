@@ -494,26 +494,32 @@ export default function ContractsPage() {
                 Extracted Important Clauses (6 Key Categories)
               </h4>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
-                {Object.entries(selectedContract.extracted_clauses || {}).map(([key, clause]) => (
-                  <div key={key} style={{ padding: 14, borderRadius: 10, background: "var(--bg-app)", border: "1px solid var(--border-color)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{clause.title}</div>
-                      <span className={`badge badge-${clause.risk_flag === "High" ? "danger" : (clause.risk_flag === "Medium" ? "warning" : "success")}`} style={{ fontSize: 10 }}>
-                        {clause.risk_flag} Risk
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.4 }}>
-                      {clause.summary}
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                      {clause.key_terms?.map((term, ti) => (
-                        <span key={ti} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
-                          {term}
+                {Object.entries(selectedContract.extracted_clauses || {}).map(([key, clause]) => {
+                  if (!clause || typeof clause !== "object") return null;
+                  const keyTerms = Array.isArray(clause.key_terms) ? clause.key_terms : [];
+                  return (
+                    <div key={key} style={{ padding: 14, borderRadius: 10, background: "var(--bg-app)", border: "1px solid var(--border-color)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{clause.title || key.toUpperCase()}</div>
+                        <span className={`badge badge-${clause.risk_flag === "High" ? "danger" : (clause.risk_flag === "Medium" ? "warning" : "success")}`} style={{ fontSize: 10 }}>
+                          {clause.risk_flag || "Low"} Risk
                         </span>
-                      ))}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.4 }}>
+                        {clause.summary || "Standard agreement clause."}
+                      </div>
+                      {keyTerms.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {keyTerms.map((term, ti) => (
+                            <span key={ti} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
+                              {term}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Identified Risks & Renewal Terms */}
@@ -521,16 +527,28 @@ export default function ContractsPage() {
                 {/* Risks */}
                 <div style={{ padding: 16, borderRadius: 10, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
                   <div style={{ fontWeight: 800, fontSize: 13, color: "var(--danger)", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                    <MdWarning /> IDENTIFIED AI LEGAL RISKS ({selectedContract.identified_risks?.length || 0})
+                    <MdWarning /> IDENTIFIED AI LEGAL RISKS ({Array.isArray(selectedContract.identified_risks) ? selectedContract.identified_risks.length : (selectedContract.identified_risks ? 1 : 0)})
                   </div>
-                  {selectedContract.identified_risks?.map((risk, ri) => (
-                    <div key={ri} style={{ marginBottom: 10, fontSize: 12 }}>
-                      <strong style={{ color: risk.severity === "CRITICAL" ? "#ef4444" : "#f59e0b" }}>
-                        [{risk.severity}] {risk.title}
-                      </strong>
-                      <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>{risk.description}</div>
-                    </div>
-                  ))}
+                  {Array.isArray(selectedContract.identified_risks) && selectedContract.identified_risks.length > 0 ? (
+                    selectedContract.identified_risks.map((risk, ri) => (
+                      <div key={ri} style={{ marginBottom: 10, fontSize: 12 }}>
+                        {typeof risk === "object" ? (
+                          <>
+                            <strong style={{ color: risk.severity === "CRITICAL" ? "#ef4444" : "#f59e0b" }}>
+                              [{risk.severity || "FLAG"}] {risk.title || "Legal Note"}
+                            </strong>
+                            <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>{risk.description || risk.recommendation}</div>
+                          </>
+                        ) : (
+                          <div style={{ color: "var(--text-secondary)" }}>{String(risk)}</div>
+                        )}
+                      </div>
+                    ))
+                  ) : typeof selectedContract.identified_risks === "string" && selectedContract.identified_risks ? (
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{selectedContract.identified_risks}</div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>No abnormal risk signals detected.</div>
+                  )}
                 </div>
 
                 {/* Expiry Terms */}
