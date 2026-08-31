@@ -4,18 +4,20 @@ Centralized settings management using Pydantic.
 Supports fallback to sqlite:///./intelliprocure.db if PostgreSQL is not configured.
 """
 
-from typing import List
+from typing import List, Union, Any
 import os
+import json
+from pydantic import field_validator
 
 try:
-    from pydantic_settings import BaseSettings
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 except ImportError:
     from pydantic import BaseModel as BaseSettings
+    SettingsConfigDict = None
 
     class BaseSettings(BaseSettings):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
-            # Read from os.environ for overrides
             for key in self.model_fields.keys():
                 env_val = os.getenv(key)
                 if env_val is not None:
@@ -33,6 +35,13 @@ class Settings(BaseSettings):
     Application settings with environment variable support.
     All settings can be overridden via .env file or environment variables.
     """
+    if SettingsConfigDict:
+        model_config = SettingsConfigDict(
+            env_file=".env",
+            env_file_encoding="utf-8",
+            extra="ignore",
+            case_sensitive=False
+        )
 
     # ─── Application ─────────────────────────────────────────────────────────
     APP_NAME: str = "IntelliProcure AI"
@@ -67,16 +76,45 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 30))
 
     # ─── CORS ─────────────────────────────────────────────────────────────────
-    ALLOWED_ORIGINS: List[str] = [
-        origin.strip()
-        for origin in os.getenv(
-            "ALLOWED_ORIGINS",
-            "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173"
-        ).split(",")
-        if origin.strip()
-    ]
-    ALLOWED_METHODS: List[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    ALLOWED_HEADERS: List[str] = ["*"]
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173"
+    ALLOWED_METHODS: str = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    ALLOWED_HEADERS: str = "*"
+
+    @property
+    def cors_origins(self) -> List[str]:
+        val = (self.ALLOWED_ORIGINS or "").strip()
+        if not val:
+            return ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173"]
+        if val.startswith("[") and val.endswith("]"):
+            try:
+                return json.loads(val)
+            except Exception:
+                pass
+        return [item.strip() for item in val.split(",") if item.strip()]
+
+    @property
+    def cors_methods(self) -> List[str]:
+        val = (self.ALLOWED_METHODS or "").strip()
+        if not val or val == "*":
+            return ["*"]
+        if val.startswith("[") and val.endswith("]"):
+            try:
+                return json.loads(val)
+            except Exception:
+                pass
+        return [item.strip() for item in val.split(",") if item.strip()]
+
+    @property
+    def cors_headers(self) -> List[str]:
+        val = (self.ALLOWED_HEADERS or "").strip()
+        if not val or val == "*":
+            return ["*"]
+        if val.startswith("[") and val.endswith("]"):
+            try:
+                return json.loads(val)
+            except Exception:
+                pass
+        return [item.strip() for item in val.split(",") if item.strip()]
 
     # ─── AI / ML ──────────────────────────────────────────────────────────────
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
@@ -123,11 +161,6 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
     STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
 
 
 # Global settings instance
