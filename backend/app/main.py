@@ -177,8 +177,8 @@ app.include_router(erp.router,               prefix=f"{API_PREFIX}/erp",        
 app.include_router(websocket_notifications.router, prefix=f"{API_PREFIX}",            tags=["WebSocket"])
 
 
-# ─── Root Endpoint ────────────────────────────────────────────────────────────
-@app.get("/", tags=["Root"])
+# ─── Root & Health Endpoints ──────────────────────────────────────────────────
+@app.api_route("/", methods=["GET", "HEAD"], tags=["Root"])
 async def root():
     return {
         "application": settings.APP_NAME,
@@ -187,3 +187,8 @@ async def root():
         "docs": "/api/docs",
         "environment": settings.ENVIRONMENT
     }
+
+
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
+async def render_health_check():
+    return {"status": "ok", "service": settings.APP_NAME}

@@ -17,11 +17,15 @@ from app.config.settings import settings
 logger = logging.getLogger(__name__)
 
 # ─── Database Engine Configuration ─────────────────────────────────────────────
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 engine_kwargs = {
     "echo": False,
 }
 
-if settings.DATABASE_URL.startswith("sqlite"):
+if db_url.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
     engine_kwargs.update({
@@ -31,7 +35,14 @@ else:
         "pool_pre_ping": True,
     })
 
-engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
+try:
+    engine = create_engine(db_url, **engine_kwargs)
+    with engine.connect() as conn:
+        pass
+except Exception as e:
+    logger.warning(f"⚠️ Failed to connect to {db_url}. Falling back to SQLite: {e}")
+    db_url = "sqlite:///./intelliprocure.db"
+    engine = create_engine(db_url, connect_args={"check_same_thread": False})
 
 # ─── Session Factory ──────────────────────────────────────────────────────────
 SessionLocal = sessionmaker(

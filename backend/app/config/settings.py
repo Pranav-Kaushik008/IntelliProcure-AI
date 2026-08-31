@@ -65,6 +65,18 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_TIMEOUT: int = 30
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def parse_database_url(cls, v: Any) -> str:
+        if isinstance(v, str):
+            v_str = v.strip()
+            if not v_str:
+                return "sqlite:///./intelliprocure.db"
+            if v_str.startswith("postgres://"):
+                return v_str.replace("postgres://", "postgresql://", 1)
+            return v_str
+        return "sqlite:///./intelliprocure.db"
+
     # ─── Redis ────────────────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_CACHE_TTL: int = 3600  # 1 hour
