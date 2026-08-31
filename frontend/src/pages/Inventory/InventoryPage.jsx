@@ -233,16 +233,16 @@ export default function InventoryPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Header */}
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
+      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ flex: "1 1 auto", minWidth: 0 }}>
           <h1 className="page-title">Inventory Tracking & Stock Management</h1>
-          <p className="page-subtitle">Real-time stock levels, transactional goods receipt, stock issues, negative stock prevention & low-stock alerts.</p>
+          <p className="page-subtitle">Real-time stock levels, goods receipt, stock issues & low-stock alerts.</p>
         </div>
-        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-          <button className="btn btn-secondary" style={{ whiteSpace: "nowrap" }} onClick={() => refetch()} disabled={isFetching}>
-            <MdRefresh fontSize={18} /> {isFetching ? "Refreshing..." : "Refresh"}
+        <div style={{ display: "flex", gap: 10, flex: "0 0 auto" }}>
+          <button className="btn btn-secondary" style={{ whiteSpace: "nowrap", overflow: "visible" }} onClick={() => refetch()} disabled={isFetching}>
+            <MdRefresh fontSize={18} /> Refresh
           </button>
-          <button className="btn btn-primary" style={{ whiteSpace: "nowrap" }} onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+          <button className="btn btn-primary" style={{ whiteSpace: "nowrap", overflow: "visible" }} onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
             <MdAdd fontSize={18} /> Add Product
           </button>
         </div>
