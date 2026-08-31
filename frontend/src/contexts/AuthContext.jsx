@@ -105,26 +105,21 @@ export function AuthProvider({ children }) {
     const savedUser = localStorage.getItem("user");
 
     if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-        api.get("/auth/me")
-          .then((res) => {
-            setUser(res.data);
-            localStorage.setItem("user", JSON.stringify(res.data));
-          })
-          .catch((err) => {
-            if (err.response?.status === 401) {
-              localStorage.removeItem("access_token");
-              localStorage.removeItem("refresh_token");
-              localStorage.removeItem("user");
-              setUser(null);
-            }
-          })
-          .finally(() => setIsLoading(false));
-      } catch {
-        localStorage.clear();
-        setIsLoading(false);
-      }
+      // Do NOT set user from localStorage yet — wait for backend to confirm the token is valid
+      setIsLoading(true);
+      api.get("/auth/me")
+        .then((res) => {
+          setUser(res.data);
+          localStorage.setItem("user", JSON.stringify(res.data));
+        })
+        .catch(() => {
+          // Token invalid or expired — force back to login
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("user");
+          setUser(null);
+        })
+        .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
     }
