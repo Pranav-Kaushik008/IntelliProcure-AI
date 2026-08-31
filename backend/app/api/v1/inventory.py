@@ -102,18 +102,20 @@ async def list_inventory(
     """List inventory items with search, category, and low-stock filters."""
     query = db.query(Inventory).filter(Inventory.is_deleted == False)
 
-    if status_filter:
+    if status_filter and isinstance(status_filter, (InventoryStatus, str)):
         query = query.filter(Inventory.status == status_filter)
-    if category:
+    if category and isinstance(category, str):
         query = query.filter(Inventory.category.ilike(f"%{category}%"))
-    if search:
+    if search and isinstance(search, str):
         query = query.filter(
             Inventory.item_name.ilike(f"%{search}%") |
             Inventory.item_code.ilike(f"%{search}%") |
             Inventory.category.ilike(f"%{search}%")
         )
 
-    items = query.order_by(Inventory.created_at.desc()).offset(skip).limit(limit).all()
+    offset_val = skip if isinstance(skip, int) else 0
+    limit_val = limit if isinstance(limit, int) else 100
+    items = query.order_by(Inventory.created_at.desc()).offset(offset_val).limit(limit_val).all()
 
     result = []
     for item in items:

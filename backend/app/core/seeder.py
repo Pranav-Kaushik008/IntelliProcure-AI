@@ -511,8 +511,87 @@ def seed_demo_data():
                      category="Office Supplies", fiscal_year="2026", allocated_amount=120000.0, spent_amount=48000.0,
                      notes="General office supplies and building maintenance. 40% Normal utilization."),
             ]
-            for bd in budget_data:
-                db.add(Budget(**bd))
+        # ── Contracts ──────────────────────────────────────────────────────
+        from app.models.rfq import Contract, ContractStatus, ContractType
+        if db.query(Contract).count() < 3:
+            contracts_data = [
+                dict(
+                    contract_number="CNT-2026-0001",
+                    supplier_id=sup1.id,
+                    title="Global Master IT Cloud & Infrastructure Services Agreement",
+                    contract_type=ContractType.MASTER_SERVICE,
+                    status=ContractStatus.ACTIVE,
+                    start_date=_ago(180),
+                    end_date=_ago(-185),
+                    contract_value=450000.0,
+                    currency="USD",
+                    auto_renew=True,
+                    notice_period_days=60,
+                    current_version=1,
+                    ai_summary="Enterprise Master Services Agreement covering multi-region cloud servers, dedicated backup infrastructure, 99.95% uptime SLA guarantee, and 24/7 technical support.",
+                    ai_risk_assessment="Low risk (Score: 12%). Standard enterprise termination clauses, explicit IP indemnity, and clear quarterly SLA credit benchmarks.",
+                    ai_expiry_terms="Auto-renews for consecutive 12-month periods unless 60 days written notice is given prior to expiry.",
+                    notes="Primary cloud supplier agreement with CloudLogix."
+                ),
+                dict(
+                    contract_number="CNT-2026-0002",
+                    supplier_id=sup2.id,
+                    title="Enterprise Hardware Supply & On-Site Maintenance SLA",
+                    contract_type=ContractType.SLA,
+                    status=ContractStatus.ACTIVE,
+                    start_date=_ago(120),
+                    end_date=_ago(-245),
+                    contract_value=280000.0,
+                    currency="USD",
+                    auto_renew=True,
+                    notice_period_days=45,
+                    current_version=2,
+                    ai_summary="Hardware procurement framework with volume tier discounts (5-12%), 4-hour on-site replacement SLA for mission-critical server hardware.",
+                    ai_risk_assessment="Low risk (Score: 15%). Strict penalty clauses on late shipments (1.5% per week delay).",
+                    ai_expiry_terms="30-day notice for price adjustments with a 5% annual CPI cap.",
+                    notes="Core IT hardware agreement with TechCore Systems."
+                ),
+                dict(
+                    contract_number="CNT-2026-0003",
+                    supplier_id=suppliers[4].id if len(suppliers) > 4 else sup1.id,
+                    title="Global Freight Forwarding & Logistics Service Framework",
+                    contract_type=ContractType.FRAMEWORK,
+                    status=ContractStatus.ACTIVE,
+                    start_date=_ago(330),
+                    end_date=_ago(-35),
+                    contract_value=195000.0,
+                    currency="USD",
+                    auto_renew=False,
+                    notice_period_days=30,
+                    current_version=1,
+                    ai_summary="Regional logistics and freight distribution contract. Expiring in 35 days — renewal decision pending RFP rate comparison.",
+                    ai_risk_assessment="Medium risk (Score: 35%). Expiring soon. Fuel surcharge index requires updated negotiation.",
+                    ai_expiry_terms="Expiring soon (35 days remaining). Manual renewal approval required by Procurement Director.",
+                    notes="Freight agreement with LogiTrans Freight. Flagged for review."
+                ),
+                dict(
+                    contract_number="CNT-2026-0004",
+                    supplier_id=suppliers[3].id if len(suppliers) > 3 else sup2.id,
+                    title="Digital Brand & Marketing Consulting Agreement",
+                    contract_type=ContractType.PURCHASE,
+                    status=ContractStatus.ACTIVE,
+                    start_date=_ago(90),
+                    end_date=_ago(-275),
+                    contract_value=120000.0,
+                    currency="USD",
+                    auto_renew=True,
+                    notice_period_days=30,
+                    current_version=1,
+                    ai_summary="Retainer agreement for digital marketing, performance advertising, and executive communications campaigns.",
+                    ai_risk_assessment="Low risk (Score: 18%). Deliverable-based milestones with Net 30 payment terms.",
+                    ai_expiry_terms="Auto-renews annually with 30 days termination for convenience clause.",
+                    notes="Marketing services with MediaBrand Solutions."
+                )
+            ]
+            existing_contracts = {c.contract_number for c in db.query(Contract).all()}
+            for cd in contracts_data:
+                if cd["contract_number"] not in existing_contracts:
+                    db.add(Contract(**cd))
             db.commit()
 
         logger.info("✅ Demo data seeded successfully")

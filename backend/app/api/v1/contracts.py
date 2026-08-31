@@ -71,25 +71,27 @@ async def list_contracts(
     """List contracts with supplier filtering, status filtering, and expiry tracking."""
     query = db.query(Contract).options(joinedload(Contract.supplier)).filter(Contract.is_deleted == False)
 
-    if supplier_id:
+    if supplier_id and isinstance(supplier_id, (UUID, str)):
         query = query.filter(Contract.supplier_id == supplier_id)
-    if status:
+    if status and isinstance(status, (ContractStatus, str)):
         query = query.filter(Contract.status == status)
-    if contract_type:
+    if contract_type and isinstance(contract_type, (ContractType, str)):
         query = query.filter(Contract.contract_type == contract_type)
-    if search:
+    if search and isinstance(search, str):
         query = query.filter(
             (Contract.title.ilike(f"%{search}%")) | (Contract.contract_number.ilike(f"%{search}%"))
         )
 
-    contracts = query.order_by(Contract.created_at.desc()).offset(skip).limit(limit).all()
+    offset_val = skip if isinstance(skip, int) else 0
+    limit_val = limit if isinstance(limit, int) else 100
+    contracts = query.order_by(Contract.created_at.desc()).offset(offset_val).limit(limit_val).all()
 
     results = []
     now = datetime.utcnow()
 
     for c in contracts:
         days_to_expiry = (c.end_date - now).days if c.end_date else 999
-        if expiring_soon and (days_to_expiry < 0 or days_to_expiry > 60):
+        if isinstance(expiring_soon, bool) and expiring_soon and (days_to_expiry < 0 or days_to_expiry > 60):
             continue
 
         results.append({

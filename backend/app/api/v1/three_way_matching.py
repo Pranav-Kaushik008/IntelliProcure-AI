@@ -450,10 +450,12 @@ async def list_match_results(
         joinedload(Invoice.purchase_order),
     ).filter(Invoice.is_deleted == False, Invoice.match_status != None)
 
-    if match_status:
+    if match_status and isinstance(match_status, str):
         query = query.filter(Invoice.match_status == match_status.upper())
 
-    invoices = query.order_by(Invoice.match_performed_at.desc()).offset(skip).limit(limit).all()
+    offset_val = skip if isinstance(skip, int) else 0
+    limit_val = limit if isinstance(limit, int) else 100
+    invoices = query.order_by(Invoice.match_performed_at.desc()).offset(offset_val).limit(limit_val).all()
 
     results = []
     for inv in invoices:

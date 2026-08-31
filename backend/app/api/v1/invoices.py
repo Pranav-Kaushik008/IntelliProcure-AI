@@ -118,17 +118,19 @@ async def list_invoices(
         if not sup:
             return []
         query = query.filter(Invoice.supplier_id == sup.id)
-    elif supplier_id:
+    elif supplier_id and isinstance(supplier_id, (UUID, str)):
         query = query.filter(Invoice.supplier_id == supplier_id)
 
-    if status:
+    if status and isinstance(status, (InvoiceStatus, str)):
         query = query.filter(Invoice.status == status)
-    if search:
+    if search and isinstance(search, str):
         query = query.filter(
             Invoice.invoice_number.ilike(f"%{search}%")
         )
 
-    invoices = query.order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
+    offset_val = skip if isinstance(skip, int) else 0
+    limit_val = limit if isinstance(limit, int) else 100
+    invoices = query.order_by(Invoice.created_at.desc()).offset(offset_val).limit(limit_val).all()
 
     result = []
     for inv in invoices:
