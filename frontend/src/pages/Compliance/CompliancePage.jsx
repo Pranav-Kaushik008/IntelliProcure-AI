@@ -82,7 +82,7 @@ export default function CompliancePage() {
     ? dbAuditLogs.map((l) => ({
         id: `AL-${String(l.id).slice(0, 6).toUpperCase()}`,
         ts: l.created_at,
-        user: l.user_id ? "Staff User" : "System",
+        user: l.user_email || (l.user_id ? "Staff User" : "System"),
         action: l.action || "SYSTEM_EVENT",
         resource: `${l.entity_type || "Entity"} ${l.entity_id || ""}`.trim(),
         ip: l.ip_address || "127.0.0.1",

@@ -93,23 +93,25 @@ async def list_budgets(
     """
     query = db.query(Budget).options(joinedload(Budget.department)).filter(Budget.is_deleted == False)
 
-    if department_name:
+    if department_name and isinstance(department_name, str):
         query = query.filter(Budget.department_name.ilike(f"%{department_name}%"))
-    if category:
+    if category and isinstance(category, str):
         query = query.filter(Budget.category.ilike(f"%{category}%"))
-    if fiscal_year:
+    if fiscal_year and isinstance(fiscal_year, str):
         query = query.filter(Budget.fiscal_year == fiscal_year)
-    if search:
+    if search and isinstance(search, str):
         query = query.filter(
             (Budget.name.ilike(f"%{search}%")) |
             (Budget.category.ilike(f"%{search}%")) |
             (Budget.department_name.ilike(f"%{search}%"))
         )
 
-    budgets = query.order_by(Budget.created_at.desc()).offset(skip).limit(limit).all()
+    offset_val = skip if isinstance(skip, int) else 0
+    limit_val = limit if isinstance(limit, int) else 100
+    budgets = query.order_by(Budget.created_at.desc()).offset(offset_val).limit(limit_val).all()
     results = [_compute_budget_metrics(b) for b in budgets]
 
-    if status:
+    if status and isinstance(status, str):
         status_upper = status.upper()
         results = [r for r in results if r["threshold_status"] == status_upper]
 
