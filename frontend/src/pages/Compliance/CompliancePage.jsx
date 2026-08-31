@@ -54,16 +54,82 @@ const trendData = [
   { month: "Aug", score: 89 }
 ];
 
-const riskItems = [
-  { title: "FCPA Training Overdue", priority: "Critical", due: "2026-08-15", owner: "Compliance Team", category: "Regulatory" },
-  { title: "ISO 27001 Gap Remediation", priority: "High", due: "2026-08-30", owner: "IT Security", category: "Security" },
-  { title: "Vendor Data Processing Agreements", priority: "Medium", due: "2026-09-15", owner: "Legal", category: "GDPR" },
-  { title: "Quarterly Access Review", priority: "Low", due: "2026-09-30", owner: "IT Admin", category: "Access Control" }
+const INITIAL_RISK_ITEMS = [
+  {
+    id: "RISK-01",
+    title: "FCPA Training Overdue",
+    priority: "Critical",
+    due: "2026-08-15",
+    owner: "Compliance Team",
+    category: "Regulatory",
+    status: "Open",
+    impact: "High regulatory exposure regarding international vendor payments and cross-border anti-bribery standards.",
+    root_cause: "18 international procurement officers have not completed the annual anti-corruption compliance certification.",
+    remediation_steps: [
+      "Issue high-priority compliance deadline notification to uncertified procurement staff.",
+      "Temporarily lock PO approval privileges for staff members exceeding the 30-day grace period.",
+      "Host mandatory live Q3 anti-bribery training with the Legal Compliance Director."
+    ],
+    notes: "Actioned by Compliance Director. Escalated to Chief Legal Officer for executive sign-off."
+  },
+  {
+    id: "RISK-02",
+    title: "ISO 27001 Gap Remediation",
+    priority: "High",
+    due: "2026-08-30",
+    owner: "IT Security",
+    category: "Security",
+    status: "In Progress",
+    impact: "Potential external audit finding regarding third-party vendor token management and data encryption.",
+    root_cause: "Direct API integrations with 2 legacy logistics partners lack automated 90-day OAuth token rotation.",
+    remediation_steps: [
+      "Enforce mandatory 90-day OAuth 2.0 token rotation policy across all supplier integrations.",
+      "Execute automated vulnerability and penetration audit on API gateway endpoints.",
+      "Submit remediation artifact and cryptographically signed certificate to ISO auditors."
+    ],
+    notes: "70% of API endpoints have been transitioned to modern token rotation standards."
+  },
+  {
+    id: "RISK-03",
+    title: "Vendor Data Processing Agreements",
+    priority: "Medium",
+    due: "2026-09-15",
+    owner: "Legal",
+    category: "GDPR",
+    status: "In Progress",
+    impact: "European GDPR compliance requirement for non-EEA cloud infrastructure vendors.",
+    root_cause: "3 sub-processors updated standard terms of service without countersigned DPA addendums.",
+    remediation_steps: [
+      "Issue standardized EU Standard Contractual Clauses (SCCs) to vendor legal representatives.",
+      "Require countersigned DPA upload prior to releasing pending Q3 invoice disbursements."
+    ],
+    notes: "2 of 3 vendors have submitted signed documents; awaiting final confirmation from remaining vendor."
+  },
+  {
+    id: "RISK-04",
+    title: "Quarterly Access Review",
+    priority: "Low",
+    due: "2026-09-30",
+    owner: "IT Admin",
+    category: "Access Control",
+    status: "Scheduled",
+    impact: "Accumulation of inactive staff and contractor access privileges over 90 days.",
+    root_cause: "Standard recurring quarterly identity & role-based access reconciliation.",
+    remediation_steps: [
+      "Export active user list and match with HR active employment directory.",
+      "Automatically revoke access for contractor accounts inactive for > 60 days.",
+      "Re-certify administrative roles with department heads."
+    ],
+    notes: "Scheduled for end of quarter automated execution."
+  }
 ];
 
 export default function CompliancePage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("frameworks");
+  const [riskItemsList, setRiskItemsList] = useState(INITIAL_RISK_ITEMS);
+  const [selectedRiskItem, setSelectedRiskItem] = useState(null);
+  const [remediationNotes, setRemediationNotes] = useState("");
 
   const { data: dbAuditLogs = [], isLoading: isLoadingLogs } = useQuery({
     queryKey: ["audit-logs"],
@@ -99,6 +165,24 @@ export default function CompliancePage() {
   );
 
   const overallScore = Math.round(complianceFrameworks.reduce((s, f) => s + f.score, 0) / complianceFrameworks.length);
+
+  const handleOpenReview = (item) => {
+    setSelectedRiskItem(item);
+    setRemediationNotes(item.notes || "");
+  };
+
+  const handleUpdateRiskStatus = (newStatus) => {
+    if (!selectedRiskItem) return;
+    setRiskItemsList((prev) =>
+      prev.map((r) =>
+        r.id === selectedRiskItem.id
+          ? { ...r, status: newStatus, notes: remediationNotes || r.notes }
+          : r
+      )
+    );
+    setSelectedRiskItem((prev) => ({ ...prev, status: newStatus, notes: remediationNotes }));
+    toast.success(`Risk status updated to "${newStatus}"`);
+  };
 
   return (
     <div style={{ padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
@@ -245,7 +329,7 @@ export default function CompliancePage() {
         {[
           { label: "Frameworks Monitored", value: complianceFrameworks.length, sub: "Active regulatory controls", color: "#6366F1" },
           { label: "Controls Assessed", value: complianceFrameworks.reduce((s, f) => s + f.controls, 0), sub: `${complianceFrameworks.reduce((s, f) => s + f.passed, 0)} passed`, color: "#10B981" },
-          { label: "Open Risk Items", value: riskItems.length, sub: "1 Critical, 1 High priority", color: "#EF4444" }
+          { label: "Open Risk Items", value: riskItemsList.filter((r) => r.status !== "Resolved").length, sub: `${riskItemsList.filter((r) => r.priority === "Critical" && r.status !== "Resolved").length} Critical priority`, color: "#EF4444" }
         ].map((kpi, i) => (
           <motion.div
             key={kpi.label}
@@ -448,19 +532,16 @@ export default function CompliancePage() {
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.7} />
-                <XAxis dataKey="month" stroke="var(--text-secondary)" tick={{ fontSize: 12, fill: "var(--text-secondary)" }} />
-                <YAxis domain={[60, 100]} stroke="var(--text-secondary)" tick={{ fontSize: 12, fill: "var(--text-secondary)" }} />
-                <Tooltip
-                  formatter={(val) => [`${val}%`, "Score"]}
-                  contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", fontSize: "12px", color: "var(--text-primary)" }}
-                />
-                <Area type="monotone" dataKey="score" stroke="#6366F1" fill="url(#scoreGrad)" strokeWidth={3} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                <XAxis dataKey="month" stroke="var(--text-secondary)" fontSize={12} />
+                <YAxis domain={[60, 100]} stroke="var(--text-secondary)" fontSize={12} />
+                <Tooltip contentStyle={{ fontSize: "12px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)" }} />
+                <Area type="monotone" dataKey="score" stroke="#6366F1" strokeWidth={2.5} fillOpacity={1} fill="url(#scoreGradient)" name="Compliance Score" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -559,7 +640,7 @@ export default function CompliancePage() {
             </table>
           </div>
           <div style={{ padding: "14px 20px", borderTop: "1px solid var(--border-color)", fontSize: "13px", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", fontWeight: 500 }}>
-            <span>Showing {filtered.length} of {auditLogs.length} events</span>
+            <span>Showing {filtered.length} of {displayLogs.length} events</span>
             <span>🔒 SHA-256 verified cryptographic audit trail</span>
           </div>
         </div>
@@ -575,24 +656,29 @@ export default function CompliancePage() {
             overflow: "hidden"
           }}
         >
-          {riskItems.map((item, i) => (
+          {riskItemsList.map((item, i) => (
             <motion.div
-              key={i}
+              key={item.id || i}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr auto auto auto auto",
+                gridTemplateColumns: "1fr auto auto auto auto auto",
                 alignItems: "center",
                 gap: "16px",
                 padding: "18px 24px",
-                borderBottom: i < riskItems.length - 1 ? "1px solid var(--border-color)" : "none",
+                borderBottom: i < riskItemsList.length - 1 ? "1px solid var(--border-color)" : "none",
                 background: i % 2 === 1 ? "var(--bg-hover)" : "transparent"
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: "14px", color: "var(--text-primary)" }}>{item.title}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--text-primary)" }}>{item.title}</span>
+                  <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "12px", background: item.status === "Resolved" ? "#10B98125" : "var(--bg-card)", color: item.status === "Resolved" ? "#10B981" : "var(--text-secondary)", border: "1px solid var(--border-color)", fontWeight: 600 }}>
+                    {item.status}
+                  </span>
+                </div>
                 <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: 500 }}>
                   Owner: <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{item.owner}</span> • Category: <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{item.category}</span>
                 </div>
@@ -614,7 +700,7 @@ export default function CompliancePage() {
                 Due: {item.due}
               </span>
               <button
-                onClick={() => toast.success(`Opening review workflow for "${item.title}"...`)}
+                onClick={() => handleOpenReview(item)}
                 style={{
                   padding: "7px 16px",
                   borderRadius: "8px",
@@ -633,6 +719,221 @@ export default function CompliancePage() {
               </button>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* ── Risk Item Review & Mitigation Modal ── */}
+      {selectedRiskItem && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => setSelectedRiskItem(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="card"
+            style={{
+              width: "680px",
+              maxWidth: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: "28px",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "16px"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: `${riskColor(selectedRiskItem.priority)}25`, color: riskColor(selectedRiskItem.priority) }}>
+                    {selectedRiskItem.priority} Risk
+                  </span>
+                  <span style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 600 }}>{selectedRiskItem.category}</span>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>• Due {selectedRiskItem.due}</span>
+                </div>
+                <h2 style={{ fontSize: "20px", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                  {selectedRiskItem.title}
+                </h2>
+                <div style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                  Owner: <strong>{selectedRiskItem.owner}</strong> • Status: <strong style={{ color: selectedRiskItem.status === "Resolved" ? "#10B981" : "var(--primary)" }}>{selectedRiskItem.status}</strong>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedRiskItem(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  padding: "4px"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Impact & Root Cause */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "20px" }}>
+              <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.06)", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "#EF4444", textTransform: "uppercase", marginBottom: "4px" }}>
+                  💥 Potential Impact & Regulatory Exposure
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--text-primary)", lineHeight: 1.5 }}>
+                  {selectedRiskItem.impact}
+                </div>
+              </div>
+
+              <div style={{ padding: "14px 16px", borderRadius: "10px", background: "var(--bg-app)", border: "1px solid var(--border-color)" }}>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "4px" }}>
+                  🔍 Identified Root Cause
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--text-primary)", lineHeight: 1.5 }}>
+                  {selectedRiskItem.root_cause}
+                </div>
+              </div>
+            </div>
+
+            {/* Remediation Checklist */}
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", marginBottom: "10px" }}>
+                🛡️ Corrective Action Plan (CAPA)
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {selectedRiskItem.remediation_steps?.map((step, si) => (
+                  <div
+                    key={si}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "10px",
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      background: "var(--bg-app)",
+                      border: "1px solid var(--border-color)",
+                      fontSize: "13px",
+                      color: "var(--text-primary)"
+                    }}
+                  >
+                    <FiCheckCircle size={16} color="#10B981" style={{ marginTop: "2px", flexShrink: 0 }} />
+                    <span style={{ lineHeight: 1.4 }}>{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Remediation Notes Input */}
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>
+                Audit Review Notes & Escalation Log
+              </label>
+              <textarea
+                value={remediationNotes}
+                onChange={(e) => setRemediationNotes(e.target.value)}
+                placeholder="Enter audit mitigation notes, executive sign-off remarks, or next steps..."
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  background: "var(--bg-app)",
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-primary)",
+                  fontSize: "13px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  fontFamily: "inherit"
+                }}
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap", borderTop: "1px solid var(--border-color)", paddingTop: "18px" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.success(`Escalation alert sent to owner (${selectedRiskItem.owner})`);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-card)",
+                    color: "var(--text-primary)",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 600
+                  }}
+                >
+                  ⚡ Notify Owner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateRiskStatus("In Progress")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(245, 158, 11, 0.4)",
+                    background: "rgba(245, 158, 11, 0.1)",
+                    color: "#F59E0B",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 600
+                  }}
+                >
+                  Mark In Progress
+                </button>
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRiskItem(null)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color)",
+                    background: "transparent",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 600
+                  }}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateRiskStatus("Resolved")}
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#10B981",
+                    color: "#FFFFFF",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 700
+                  }}
+                >
+                  ✓ Mark Remediated
+                </button>
+              </div>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
