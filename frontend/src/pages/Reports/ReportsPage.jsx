@@ -51,28 +51,23 @@ export default function ReportsPage() {
   const handleExport = async (reportType) => {
     setGenerating(reportType);
     try {
-      const params = new URLSearchParams({
-        report_type: reportType,
-        format,
-        ...(startDate   && { start_date: startDate }),
-        ...(endDate     && { end_date: endDate }),
-        ...(department  && { department }),
-        ...(category    && { category }),
-        ...(status      && { status }),
+      const response = await api.get("/reports/generate", {
+        params: {
+          report_type: reportType,
+          format,
+          ...(startDate   && { start_date: startDate }),
+          ...(endDate     && { end_date: endDate }),
+          ...(department  && { department }),
+          ...(category    && { category }),
+          ...(status      && { status }),
+        },
+        responseType: "blob"
       });
 
-      const token = sessionStorage.getItem("access_token") || localStorage.getItem("access_token");
-      const response = await fetch(`/api/v1/reports/generate?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const blob = new Blob([response.data], {
+        type: format === "pdf" ? "application/pdf" : format === "excel" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "text/csv"
       });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get("Content-Disposition") || "";
+      const contentDisposition = response.headers["content-disposition"] || "";
       const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
       const filename = filenameMatch ? filenameMatch[1] : `${reportType}_report.${format}`;
 
