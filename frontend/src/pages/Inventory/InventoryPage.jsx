@@ -238,12 +238,12 @@ export default function InventoryPage() {
           <h1 className="page-title">Inventory Tracking & Stock Management</h1>
           <p className="page-subtitle">Real-time stock levels, transactional goods receipt, stock issues, negative stock prevention & low-stock alerts.</p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-secondary" onClick={() => refetch()} disabled={isFetching}>
+        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          <button className="btn btn-secondary" style={{ whiteSpace: "nowrap" }} onClick={() => refetch()} disabled={isFetching}>
             <MdRefresh fontSize={18} /> {isFetching ? "Refreshing..." : "Refresh"}
           </button>
-          <button className="btn btn-primary" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-            <MdAdd fontSize={18} /> Add Product / SKU
+          <button className="btn btn-primary" style={{ whiteSpace: "nowrap" }} onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+            <MdAdd fontSize={18} /> Add Product
           </button>
         </div>
       </div>
@@ -262,13 +262,13 @@ export default function InventoryPage() {
 
         <select
           className="form-control"
-          style={{ width: 170 }}
+          style={{ width: 180, flexShrink: 0 }}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="">All Stock Statuses</option>
+          <option value="">All Statuses</option>
           <option value="in_stock">In Stock</option>
-          <option value="low_stock">Low Stock Alerts</option>
+          <option value="low_stock">Low Stock</option>
           <option value="out_of_stock">Out of Stock</option>
         </select>
       </div>
