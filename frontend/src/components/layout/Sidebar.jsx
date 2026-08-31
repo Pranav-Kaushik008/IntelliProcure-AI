@@ -116,6 +116,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
               <NavLink
                 to={item.path}
+                end
                 className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
                 title={item.label}
                 style={{ justifyContent: collapsed ? "center" : "flex-start" }}
