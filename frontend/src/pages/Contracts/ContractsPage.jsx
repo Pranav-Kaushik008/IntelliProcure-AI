@@ -136,10 +136,15 @@ export default function ContractsPage() {
         params: { version: version || undefined },
         responseType: "blob"
       });
+      // Extract filename from Content-Disposition header
+      const disposition = res.headers["content-disposition"] || "";
+      const filenameMatch = disposition.match(/filename[^;=\n]*=["']?([^"';\n]+)/);
+      const fileName = filenameMatch ? filenameMatch[1] : `Contract_${contractId.slice(0, 8)}.txt`;
+
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Contract_Document_${contractId.slice(0, 8)}.pdf`);
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
       link.remove();

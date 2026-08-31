@@ -537,7 +537,7 @@ async def download_contract_file(
                 target_path = v["file_path"]
                 break
 
-    if not target_path or not os.path.exists(target_path):
+    if not target_path or not os.path.exists(target_path) or os.path.getsize(target_path) < 100:
         # Generate clean official enterprise legal agreement document on demand
         safe_name = f"{c.contract_number}_Master_Agreement.txt"
         gen_path = SECURE_CONTRACTS_DIR / safe_name
@@ -545,6 +545,8 @@ async def download_contract_file(
         sup_name = c.supplier.company_name if c.supplier else "Supplier"
         start_str = c.start_date.strftime("%Y-%m-%d") if c.start_date else "2026-01-01"
         end_str = c.end_date.strftime("%Y-%m-%d") if c.end_date else "2027-01-01"
+        c_type = c.contract_type.value if hasattr(c.contract_type, "value") else c.contract_type
+        c_status = c.status.value if hasattr(c.status, "value") else c.status
         
         doc_content = f"""================================================================================
 INTELLIPROCURE AI ENTERPRISE CONTRACT & SERVICE LEVEL AGREEMENT
@@ -555,7 +557,7 @@ Contract Reference: {c.contract_number}
    - Enterprise Organization: IntelliProcure AI Global Enterprise
    - Supplier Partner: {sup_name}
    - Contract Title: {c.title}
-   - Contract Type: {c.contract_type.value if hasattr(c.contract_type, "value") else c.contract_type}
+   - Contract Type: {c_type}
    - Total Committed Value: ${c.contract_value:,.2f} {c.currency or 'USD'}
    - Effective Period: {start_str} to {end_str}
    - Auto-Renewal: {'Active (60 days notice)' if c.auto_renew else 'Fixed Term (Non-renewing)'}
@@ -571,7 +573,7 @@ Contract Reference: {c.contract_number}
 
 4. COMPLIANCE & GOVERNANCE
    - Version: v{c.current_version or 1}
-   - Status: {c.status.value if hasattr(c.status, "value") else c.status}
+   - Status: {c_status}
    - Verified by IntelliProcure AI Legal Intelligence Engine
 ================================================================================
 """
@@ -582,8 +584,17 @@ Contract Reference: {c.contract_number}
         db.commit()
 
     file_name = pathlib.Path(target_path).name
+    ext = pathlib.Path(target_path).suffix.lower()
+    media_types = {
+        ".pdf": "application/pdf",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".doc": "application/msword",
+        ".txt": "text/plain",
+    }
+    media_type = media_types.get(ext, "application/octet-stream")
+
     return FileResponse(
         path=target_path,
         filename=file_name,
-        media_type="application/octet-stream"
+        media_type=media_type
     )
