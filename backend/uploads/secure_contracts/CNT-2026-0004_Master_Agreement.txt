@@ -1,0 +1,28 @@
+================================================================================
+INTELLIPROCURE AI ENTERPRISE CONTRACT & SERVICE LEVEL AGREEMENT
+Contract Reference: CNT-2026-0004
+================================================================================
+
+1. PARTIES & SCOPE
+   - Enterprise Organization: IntelliProcure AI Global Enterprise
+   - Supplier Partner: CloudLogix Solutions
+   - Contract Title: Digital Brand & Marketing Consulting Agreement
+   - Contract Type: purchase
+   - Total Committed Value: $120,000.00 USD
+   - Effective Period: 2026-06-02 to 2027-06-02
+   - Auto-Renewal: Active (60 days notice)
+
+2. AI LEGAL ANALYSIS & CLAUSE SUMMARY
+   Retainer agreement for digital marketing, performance advertising, and executive communications campaigns.
+
+3. EXTRACTED OBLIGATIONS & KEY CLAUSES
+   - Payment Terms: Net 30 days from invoice receipt, electronic bank transfer.
+   - Termination: 30 days written notice for convenience; immediate for material breach.
+   - Liability & Indemnity: Standard mutual indemnity capped at 1.5x contract value.
+   - Performance SLA: 99.95% availability with tiered penalty credits on downtime.
+
+4. COMPLIANCE & GOVERNANCE
+   - Version: v1
+   - Status: active
+   - Verified by IntelliProcure AI Legal Intelligence Engine
+================================================================================

@@ -1,0 +1,28 @@
+================================================================================
+INTELLIPROCURE AI ENTERPRISE CONTRACT & SERVICE LEVEL AGREEMENT
+Contract Reference: CNT-2026-0003
+================================================================================
+
+1. PARTIES & SCOPE
+   - Enterprise Organization: IntelliProcure AI Global Enterprise
+   - Supplier Partner: MechCo Engineering
+   - Contract Title: Global Freight Forwarding & Logistics Service Framework
+   - Contract Type: framework
+   - Total Committed Value: $195,000.00 USD
+   - Effective Period: 2025-10-05 to 2026-10-05
+   - Auto-Renewal: Fixed Term (Non-renewing)
+
+2. AI LEGAL ANALYSIS & CLAUSE SUMMARY
+   Regional logistics and freight distribution contract. Expiring in 35 days — renewal decision pending RFP rate comparison.
+
+3. EXTRACTED OBLIGATIONS & KEY CLAUSES
+   - Payment Terms: Net 30 days from invoice receipt, electronic bank transfer.
+   - Termination: 30 days written notice for convenience; immediate for material breach.
+   - Liability & Indemnity: Standard mutual indemnity capped at 1.5x contract value.
+   - Performance SLA: 99.95% availability with tiered penalty credits on downtime.
+
+4. COMPLIANCE & GOVERNANCE
+   - Version: v1
+   - Status: active
+   - Verified by IntelliProcure AI Legal Intelligence Engine
+================================================================================
