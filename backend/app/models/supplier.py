@@ -30,6 +30,7 @@ class SupplierCategory(str, enum.Enum):
     CONSULTING = "consulting"
     MANUFACTURING = "manufacturing"
     RAW_MATERIALS = "raw_materials"
+    MARKETING = "marketing"
 
 
 class RiskLevel(str, enum.Enum):

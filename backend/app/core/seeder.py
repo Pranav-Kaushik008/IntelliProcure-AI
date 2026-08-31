@@ -170,7 +170,7 @@ def seed_demo_data():
                      contact_person="James Rivera", phone="+1-212-555-0303"),
 
                 dict(supplier_code="SUP-004", company_name="MediaBrand Solutions",
-                     email="billing@mediabrand.com", category="marketing", status="active",
+                     email="billing@mediabrand.com", category="services", status="active",
                      risk_level="low", overall_rating=4.4, quality_score=4.5,
                      delivery_score=4.3, price_score=4.2, total_orders=64,
                      total_spend=420000.0, on_time_delivery_rate=93.2, risk_score=22.0,
