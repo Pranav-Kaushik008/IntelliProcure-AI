@@ -175,8 +175,8 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(data.email, data.password);
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || "Invalid credentials. Please try again.");
+    } catch {
+      // Error toast already displayed by AuthContext login()
     } finally {
       setIsLoading(false);
     }

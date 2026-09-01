@@ -2,11 +2,18 @@ import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, "");
+  }
+  return "http://localhost:8000/api/v1";
+};
+
+const API_BASE = getApiBase();
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 5000,
+  timeout: 60000, // 60s timeout for Render free tier spin-up
   headers: { "Content-Type": "application/json" },
 });
 
@@ -149,7 +156,18 @@ export function AuthProvider({ children }) {
       toast.success(`Welcome back, ${userData.first_name || 'User'}! 🎉`);
       return userData;
     } catch (err) {
-      const errorMsg = err?.response?.data?.detail || (err.response ? "Invalid credentials" : "Server connection failed");
+      let errorMsg = "Server connection failed";
+      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        errorMsg = "Server is starting up (cold start). Please wait 10 seconds and try again.";
+      } else if (err.response?.data?.detail) {
+        errorMsg = typeof err.response.data.detail === "string"
+          ? err.response.data.detail
+          : (err.response.data.detail[0]?.msg || "Authentication failed");
+      } else if (err.response?.status === 401) {
+        errorMsg = "Invalid email or password. Please try again.";
+      } else if (!err.response) {
+        errorMsg = "Cannot reach backend server. Please verify the API URL or wait for the server to wake up.";
+      }
       toast.error(errorMsg);
       throw err;
     } finally {
