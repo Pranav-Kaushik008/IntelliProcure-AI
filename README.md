@@ -71,7 +71,7 @@
 ---
 
 ### 1. Clone the Repository
-`ash
+`bash
 git clone https://github.com/Pranav-Kaushik008/IntelliProcure-AI.git
 cd IntelliProcure-AI
 `
@@ -79,7 +79,7 @@ cd IntelliProcure-AI
 ---
 
 ### 2. Backend Setup
-`ash
+`bash
 # Navigate to backend directory
 cd backend
 
