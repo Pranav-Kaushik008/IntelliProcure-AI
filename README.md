@@ -121,10 +121,10 @@ npm run dev
 | Role | Email | Password | Access Scope |
 |---|---|---|---|
 | **Master Executive Admin** | pranav****@gmail.com | ****** | Full platform administration, system settings & security overrides |
-| **Procurement Buyer** | uyer@***** | ***** | PR creation, RFQ issuance, PO management & vendor scoring |
+| **Procurement Buyer** | buyer@***** | ***** | PR creation, RFQ issuance, PO management & vendor scoring |
 | **Department Manager** | manager@**** | ***** | Requisition approval, department budget oversight & vendor reviews |
-| **Financial Controller** | inance@***** | ***** | 3-Way match validation, invoice sign-off & payment release |
-| **Compliance Auditor** | uditor@***** | ***** | Read-only compliance ledgers, SOX/GDPR frameworks & audit logs |
+| **Financial Controller** | finance@***** | ***** | 3-Way match validation, invoice sign-off & payment release |
+| **Compliance Auditor** | auditor@***** | ***** | Read-only compliance ledgers, SOX/GDPR frameworks & audit logs |
 | **External Supplier** | orders@***** | ***** | RFQ bid submissions, purchase order tracking & digital invoices |
 
 ---
@@ -133,12 +133,12 @@ npm run dev
 
 ### 1. Backend Web Service
 - **Environment**: Python 3
-- **Root Directory**: ackend
+- **Root Directory**: backend
 - **Build Command**: pip install -r requirements.txt
 - **Start Command**: uvicorn app.main:app --host 0.0.0.0 --port 
 - **Environment Variables**:
   - DATABASE_URL: *Your PostgreSQL connection string or sqlite:///./intelliprocure.db*
-  - SECRET_KEY: NK52hYqFNjaZVwlR0nA4xqzjoUqHmLl1ccKSD3wcKNp
+  - SECRET_KEY: your_secrete_key
   - ALLOWED_ORIGINS: *
   - PYTHON_VERSION: 3.12.2
 
