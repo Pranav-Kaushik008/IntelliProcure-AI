@@ -120,12 +120,12 @@ npm run dev
 
 | Role | Email | Password | Access Scope |
 |---|---|---|---|
-| **Master Executive Admin** | pranavkaushikyr@gmail.com | Admin@1234 | Full platform administration, system settings & security overrides |
-| **Procurement Buyer** | uyer@intelliprocure.ai | Buyer@1234 | PR creation, RFQ issuance, PO management & vendor scoring |
-| **Department Manager** | manager@intelliprocure.ai | Manager@1234 | Requisition approval, department budget oversight & vendor reviews |
-| **Financial Controller** | inance@intelliprocure.ai | Finance@1234 | 3-Way match validation, invoice sign-off & payment release |
-| **Compliance Auditor** | uditor@intelliprocure.ai | Auditor@1234 | Read-only compliance ledgers, SOX/GDPR frameworks & audit logs |
-| **External Supplier** | orders@techcore.com | Supplier@1234 | RFQ bid submissions, purchase order tracking & digital invoices |
+| **Master Executive Admin** | pranav****@gmail.com | ****** | Full platform administration, system settings & security overrides |
+| **Procurement Buyer** | uyer@***** | ***** | PR creation, RFQ issuance, PO management & vendor scoring |
+| **Department Manager** | manager@**** | ***** | Requisition approval, department budget oversight & vendor reviews |
+| **Financial Controller** | inance@***** | ***** | 3-Way match validation, invoice sign-off & payment release |
+| **Compliance Auditor** | uditor@***** | ***** | Read-only compliance ledgers, SOX/GDPR frameworks & audit logs |
+| **External Supplier** | orders@***** | ***** | RFQ bid submissions, purchase order tracking & digital invoices |
 
 ---
 
@@ -143,9 +143,9 @@ npm run dev
   - PYTHON_VERSION: 3.12.2
 
 ### 2. Frontend Static Site
-- **Root Directory**: rontend
+- **Root Directory**: frontend
 - **Build Command**: 
-pm run build
+  npm run build
 - **Publish Directory**: dist
 - **Environment Variables**:
   - VITE_API_URL: https://<your-backend-name>.onrender.com/api/v1
