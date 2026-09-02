@@ -199,7 +199,7 @@ export default function LoginPage() {
 
     // Validate Admin passcode if registering Admin role (or bypass if master admin email)
     if (roleObj.id === "admin" && !isMasterAdminEmail && data.security_code !== "ADMIN-2024" && data.security_code !== "MASTER") {
-      toast.error("Invalid Admin Security Code. Use 'ADMIN-2024' or contact master admin.");
+      toast.error("Invalid Admin Security Passcode. Please contact the platform administrator.");
       return;
     }
 
@@ -839,7 +839,7 @@ export default function LoginPage() {
                     <>
                       <div style={{ position: "relative", marginBottom: 12 }}>
                         <MdVpnKey style={iconStyle} />
-                        <input placeholder="Security Key / Admin Passcode (Default: ADMIN-2024)"
+                        <input placeholder="Security Key / Admin Passcode"
                           {...signUpForm.register("security_code")}
                           style={inputStyle}
                           onFocus={e => e.target.style.borderColor = "rgba(236,72,153,0.6)"}
