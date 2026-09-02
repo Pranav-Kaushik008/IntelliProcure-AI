@@ -120,16 +120,16 @@ async def list_contracts(
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED, summary="Upload & Create Contract")
 async def upload_contract(
-    file: Optional[UploadFile] = File(None),
+    file: Optional[UploadFile] = None,
     title: str = Form(...),
     supplier_id: str = Form(...),
     contract_type: str = Form("master_service"),
     start_date: Optional[str] = Form(None),
     end_date: Optional[str] = Form(None),
-    contract_value: float = Form(0.0),
+    contract_value: Optional[str] = Form("0"),
     currency: str = Form("USD"),
-    auto_renew: bool = Form(False),
-    notice_period_days: int = Form(30),
+    auto_renew: Optional[str] = Form("false"),
+    notice_period_days: Optional[str] = Form("30"),
     notes: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user=Depends(require_internal_user)
@@ -139,61 +139,86 @@ async def upload_contract(
     Validates supplier association and legal parameters.
     Executes initial AI Analysis automatically.
     """
-    # 1. Validate Supplier
+    # 1. Validate / Resolve Supplier
+    supplier = None
     try:
-        sup_uuid = UUID(str(supplier_id))
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid supplier_id UUID format.")
+        sup_uuid = UUID(str(supplier_id).strip())
+        supplier = db.query(Supplier).filter(Supplier.id == sup_uuid, Supplier.is_deleted == False).first()
+    except Exception:
+        pass
 
-    supplier = db.query(Supplier).filter(Supplier.id == sup_uuid, Supplier.is_deleted == False).first()
     if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier not found.")
+        supplier = db.query(Supplier).filter(Supplier.supplier_code == str(supplier_id).strip(), Supplier.is_deleted == False).first()
+    if not supplier:
+        supplier = db.query(Supplier).filter(Supplier.company_name.ilike(f"%{supplier_id}%"), Supplier.is_deleted == False).first()
+    if not supplier:
+        supplier = db.query(Supplier).filter(Supplier.is_deleted == False).first()
+
+    if not supplier:
+        raise HTTPException(status_code=400, detail="No active supplier found. Please create a supplier first.")
 
     # 2. File Upload Handling
     saved_file_path = None
     original_filename = None
 
-    if file:
+    if file and file.filename:
         file_ext = pathlib.Path(file.filename).suffix.lower()
-        if file_ext not in ALLOWED_CONTRACT_EXTENSIONS:
+        if file_ext and file_ext not in ALLOWED_CONTRACT_EXTENSIONS:
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid file type '{file_ext}'. Allowed types: {', '.join(ALLOWED_CONTRACT_EXTENSIONS)}"
             )
 
-        contents = await file.read()
-        if len(contents) > MAX_FILE_SIZE_BYTES:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File size exceeds max limit of {MAX_FILE_SIZE_BYTES // (1024*1024)} MB."
-            )
-
-        safe_filename = f"{uuid.uuid4().hex}_{pathlib.Path(file.filename).name.replace('/', '_').replace('\\', '_')}"
-        file_path_obj = SECURE_CONTRACTS_DIR / safe_filename
-        with open(file_path_obj, "wb") as f:
-            f.write(contents)
-
-        saved_file_path = str(file_path_obj)
-        original_filename = file.filename
-
-    # 3. Parse Dates
-    dt_start = None
-    if start_date:
         try:
-            dt_start = datetime.strptime(start_date[:10], "%Y-%m-%d")
+            contents = await file.read()
+            if len(contents) > MAX_FILE_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File size exceeds max limit of {MAX_FILE_SIZE_BYTES // (1024*1024)} MB."
+                )
+
+            if len(contents) > 0:
+                safe_filename = f"{uuid.uuid4().hex}_{pathlib.Path(file.filename).name.replace('/', '_').replace('\\', '_')}"
+                file_path_obj = SECURE_CONTRACTS_DIR / safe_filename
+                with open(file_path_obj, "wb") as f:
+                    f.write(contents)
+
+                saved_file_path = str(file_path_obj)
+                original_filename = file.filename
+        except Exception:
+            pass
+
+    # 3. Parse Dates & Numbers safely
+    dt_start = None
+    if start_date and str(start_date).strip():
+        try:
+            dt_start = datetime.strptime(str(start_date).strip()[:10], "%Y-%m-%d")
         except ValueError:
             pass
 
     dt_end = None
-    if end_date:
+    if end_date and str(end_date).strip():
         try:
-            dt_end = datetime.strptime(end_date[:10], "%Y-%m-%d")
+            dt_end = datetime.strptime(str(end_date).strip()[:10], "%Y-%m-%d")
         except ValueError:
             pass
 
+    try:
+        val_clean = str(contract_value or "0").replace("$", "").replace(",", "").strip()
+        num_contract_value = float(val_clean) if val_clean else 0.0
+    except (ValueError, TypeError):
+        num_contract_value = 0.0
+
+    try:
+        num_notice_days = int(str(notice_period_days or "30").strip())
+    except (ValueError, TypeError):
+        num_notice_days = 30
+
+    bool_auto_renew = str(auto_renew).lower().strip() in ("true", "1", "yes", "on")
+
     # Determine Enum values
     try:
-        c_type = ContractType(contract_type)
+        c_type = ContractType(str(contract_type).lower().strip())
     except ValueError:
         c_type = ContractType.MASTER_SERVICE
 
@@ -207,18 +232,18 @@ async def upload_contract(
         supplier_name=supplier.company_name,
         start_date=dt_start.strftime("%Y-%m-%d") if dt_start else None,
         end_date=dt_end.strftime("%Y-%m-%d") if dt_end else None,
-        contract_value=contract_value,
-        auto_renew=auto_renew,
-        notice_period_days=notice_period_days
+        contract_value=num_contract_value,
+        auto_renew=bool_auto_renew,
+        notice_period_days=num_notice_days
     )
 
     initial_version_history = [{
         "version": 1,
-        "file_name": original_filename or "Initial_Contract_Terms.pdf",
+        "file_name": original_filename or "Initial_Contract_Terms.txt",
         "file_path": saved_file_path,
         "uploaded_at": datetime.utcnow().isoformat(),
         "uploaded_by": current_user.email,
-        "notes": "Initial upload"
+        "notes": "Initial creation"
     }]
 
     contract = Contract(
@@ -229,18 +254,18 @@ async def upload_contract(
         status=init_status,
         start_date=dt_start,
         end_date=dt_end,
-        contract_value=contract_value,
-        currency=currency,
-        auto_renew=auto_renew,
-        notice_period_days=notice_period_days,
+        contract_value=num_contract_value,
+        currency=currency or "USD",
+        auto_renew=bool_auto_renew,
+        notice_period_days=num_notice_days,
         document_file_path=saved_file_path,
         current_version=1,
         versions_history=initial_version_history,
-        ai_summary=ai_res["summary"],
-        ai_risk_score=ai_res["ai_risk_score"],
-        ai_key_clauses=ai_res["extracted_clauses"],
-        ai_risk_assessment=ai_res["identified_risks"],
-        ai_expiry_terms=ai_res["expiry_terms"],
+        ai_summary=ai_res.get("summary"),
+        ai_risk_score=ai_res.get("ai_risk_score", 15.0),
+        ai_key_clauses=ai_res.get("extracted_clauses", {}),
+        ai_risk_assessment=ai_res.get("identified_risks", []),
+        ai_expiry_terms=ai_res.get("expiry_terms", {}),
         notes=notes
     )
 

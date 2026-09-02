@@ -97,35 +97,47 @@ export default function ContractsPage() {
   };
 
   // ── Handle Upload Contract Submit ──────────────────────────────────────────
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
+    if (!uploadForm.title?.trim()) {
+      toast.error("Please enter a contract title");
+      return;
+    }
     if (!uploadForm.supplier_id) {
       toast.error("Please select a supplier");
       return;
     }
 
+    setIsSubmitting(true);
     const formData = new FormData();
-    formData.append("title", uploadForm.title);
+    formData.append("title", uploadForm.title.trim());
     formData.append("supplier_id", uploadForm.supplier_id);
-    formData.append("contract_type", uploadForm.contract_type);
-    formData.append("start_date", uploadForm.start_date);
-    formData.append("end_date", uploadForm.end_date);
-    formData.append("contract_value", uploadForm.contract_value);
-    formData.append("currency", uploadForm.currency);
-    formData.append("auto_renew", uploadForm.auto_renew);
-    formData.append("notice_period_days", uploadForm.notice_period_days);
+    formData.append("contract_type", uploadForm.contract_type || "master_service");
+    if (uploadForm.start_date) formData.append("start_date", uploadForm.start_date);
+    if (uploadForm.end_date) formData.append("end_date", uploadForm.end_date);
+    formData.append("contract_value", String(uploadForm.contract_value || "0"));
+    formData.append("currency", uploadForm.currency || "USD");
+    formData.append("auto_renew", uploadForm.auto_renew ? "true" : "false");
+    formData.append("notice_period_days", String(uploadForm.notice_period_days || "30"));
     if (uploadForm.notes) formData.append("notes", uploadForm.notes);
     if (uploadForm.file) formData.append("file", uploadForm.file);
 
     try {
-      await api.post("/contracts/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-      toast.success("Contract uploaded and AI analyzed successfully!");
+      await api.post("/contracts/upload", formData);
+      toast.success("Contract registered & AI analyzed successfully! 📜");
       setIsUploadModalOpen(false);
+      setUploadForm({
+        title: "", supplier_id: "", contract_type: "master_service",
+        start_date: "", end_date: "", contract_value: "", currency: "USD",
+        auto_renew: false, notice_period_days: 30, notes: "", file: null
+      });
       refetch();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Contract upload failed");
+      toast.error(err?.response?.data?.detail || "Contract upload failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -444,8 +456,10 @@ export default function ContractsPage() {
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setIsUploadModalOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Upload & Run AI Clause Extraction</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsUploadModalOpen(false)} disabled={isSubmitting}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Processing AI Analysis..." : "Upload & Run AI Clause Extraction"}
+                  </button>
                 </div>
               </form>
             </motion.div>
