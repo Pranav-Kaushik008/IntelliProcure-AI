@@ -282,7 +282,20 @@ export default function ContractsPage() {
               {isLoading ? (
                 <tr><td colSpan={10} style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>Loading contracts...</td></tr>
               ) : !contracts || contracts.length === 0 ? (
-                <tr><td colSpan={10} style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>No contracts found. Click Upload Contract to add agreements.</td></tr>
+                <tr>
+                  <td colSpan={10} style={{ textAlign: "center", padding: "48px 20px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <div style={{ fontSize: 36 }}>📜</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>No Contracts Registered Yet</div>
+                      <p style={{ fontSize: 13, color: "var(--text-muted)", maxWidth: 420, margin: 0 }}>
+                        Click below to register an enterprise agreement and trigger automated 6-clause AI risk extraction.
+                      </p>
+                      <button className="btn btn-primary" onClick={() => setIsUploadModalOpen(true)} style={{ marginTop: 8 }}>
+                        <MdCloudUpload fontSize={16} /> Upload & Analyze Contract
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 contracts.map((c) => (
                   <tr key={c.id}>

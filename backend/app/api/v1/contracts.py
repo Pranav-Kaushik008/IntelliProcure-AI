@@ -86,6 +86,15 @@ async def list_contracts(
     limit_val = limit if isinstance(limit, int) else 100
     contracts = query.order_by(Contract.created_at.desc()).offset(offset_val).limit(limit_val).all()
 
+    # Auto-seed demo contracts if empty
+    if len(contracts) == 0 and not search and not supplier_id and not status:
+        try:
+            from app.core.seeder import seed_demo_data
+            seed_demo_data()
+            contracts = query.order_by(Contract.created_at.desc()).offset(offset_val).limit(limit_val).all()
+        except Exception:
+            pass
+
     results = []
     now = datetime.utcnow()
 
