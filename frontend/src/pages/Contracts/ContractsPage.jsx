@@ -125,7 +125,22 @@ export default function ContractsPage() {
     if (uploadForm.file) formData.append("file", uploadForm.file);
 
     try {
-      await api.post("/contracts/upload", formData);
+      if (uploadForm.file) {
+        await api.post("/contracts/upload", formData);
+      } else {
+        await api.post("/contracts/", {
+          title: uploadForm.title.trim(),
+          supplier_id: uploadForm.supplier_id,
+          contract_type: uploadForm.contract_type || "master_service",
+          start_date: uploadForm.start_date || undefined,
+          end_date: uploadForm.end_date || undefined,
+          contract_value: Number(uploadForm.contract_value) || 0,
+          currency: uploadForm.currency || "USD",
+          auto_renew: Boolean(uploadForm.auto_renew),
+          notice_period_days: Number(uploadForm.notice_period_days) || 30,
+          notes: uploadForm.notes || undefined,
+        });
+      }
       toast.success("Contract registered & AI analyzed successfully! 📜");
       setIsUploadModalOpen(false);
       setUploadForm({
@@ -135,7 +150,7 @@ export default function ContractsPage() {
       });
       refetch();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Contract upload failed. Please try again.");
+      toast.error(err?.response?.data?.detail || "Contract registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

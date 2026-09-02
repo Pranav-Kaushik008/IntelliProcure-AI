@@ -14,7 +14,6 @@ const API_BASE = getApiBase();
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 60000, // 60s timeout for Render free tier spin-up
-  headers: { "Content-Type": "application/json" },
 });
 
 // Request Interceptor — attach JWT Access Token
@@ -22,6 +21,12 @@ api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem("access_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // If sending FormData, delete Content-Type so browser/axios sets multipart/form-data with boundary
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else if (!config.headers["Content-Type"]) {
+    config.headers["Content-Type"] = "application/json";
   }
   return config;
 });

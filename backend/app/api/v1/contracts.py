@@ -294,6 +294,126 @@ async def upload_contract(
     }
 
 
+@router.post("/", status_code=status.HTTP_201_CREATED, summary="Create Contract (JSON)")
+async def create_contract_json(
+    payload: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user=Depends(require_internal_user)
+):
+    """Direct JSON endpoint to create and AI analyze contracts."""
+    title = str(payload.get("title", "")).strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Contract title is required.")
+
+    supplier_id = str(payload.get("supplier_id", "")).strip()
+    supplier = None
+    try:
+        sup_uuid = UUID(supplier_id)
+        supplier = db.query(Supplier).filter(Supplier.id == sup_uuid, Supplier.is_deleted == False).first()
+    except Exception:
+        pass
+
+    if not supplier:
+        supplier = db.query(Supplier).filter(Supplier.supplier_code == supplier_id, Supplier.is_deleted == False).first()
+    if not supplier:
+        supplier = db.query(Supplier).filter(Supplier.company_name.ilike(f"%{supplier_id}%"), Supplier.is_deleted == False).first()
+    if not supplier:
+        supplier = db.query(Supplier).filter(Supplier.is_deleted == False).first()
+
+    if not supplier:
+        raise HTTPException(status_code=400, detail="No active supplier found. Please create a supplier first.")
+
+    dt_start = None
+    start_date = payload.get("start_date")
+    if start_date:
+        try:
+            dt_start = datetime.strptime(str(start_date)[:10], "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    dt_end = None
+    end_date = payload.get("end_date")
+    if end_date:
+        try:
+            dt_end = datetime.strptime(str(end_date)[:10], "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    try:
+        c_val = float(str(payload.get("contract_value", 0)).replace("$", "").replace(",", "").strip() or 0)
+    except Exception:
+        c_val = 0.0
+
+    try:
+        n_days = int(str(payload.get("notice_period_days", 30)).strip() or 30)
+    except Exception:
+        n_days = 30
+
+    auto_r = str(payload.get("auto_renew", False)).lower() in ("true", "1", "yes")
+
+    try:
+        c_type = ContractType(str(payload.get("contract_type", "master_service")).lower())
+    except ValueError:
+        c_type = ContractType.MASTER_SERVICE
+
+    contract_num = _generate_contract_number(db)
+    init_status = _evaluate_contract_status(dt_start, dt_end, ContractStatus.ACTIVE)
+
+    ai_res = AIPredictiveEngine.analyze_contract_document(
+        title=title,
+        contract_type=c_type.value,
+        supplier_name=supplier.company_name,
+        start_date=dt_start.strftime("%Y-%m-%d") if dt_start else None,
+        end_date=dt_end.strftime("%Y-%m-%d") if dt_end else None,
+        contract_value=c_val,
+        auto_renew=auto_r,
+        notice_period_days=n_days
+    )
+
+    contract = Contract(
+        contract_number=contract_num,
+        supplier_id=supplier.id,
+        title=title,
+        contract_type=c_type,
+        status=init_status,
+        start_date=dt_start,
+        end_date=dt_end,
+        contract_value=c_val,
+        currency=payload.get("currency", "USD"),
+        auto_renew=auto_r,
+        notice_period_days=n_days,
+        current_version=1,
+        versions_history=[{
+            "version": 1,
+            "file_name": "Contract_Terms.txt",
+            "uploaded_at": datetime.utcnow().isoformat(),
+            "uploaded_by": current_user.email,
+            "notes": "Initial creation"
+        }],
+        ai_summary=ai_res.get("summary"),
+        ai_risk_score=ai_res.get("ai_risk_score", 15.0),
+        ai_key_clauses=ai_res.get("extracted_clauses", {}),
+        ai_risk_assessment=ai_res.get("identified_risks", []),
+        ai_expiry_terms=ai_res.get("expiry_terms", {}),
+        notes=payload.get("notes")
+    )
+
+    db.add(contract)
+    db.commit()
+    db.refresh(contract)
+
+    return {
+        "id": str(contract.id),
+        "contract_number": contract.contract_number,
+        "title": contract.title,
+        "supplier_name": supplier.company_name,
+        "status": contract.status.value if hasattr(contract.status, "value") else contract.status,
+        "current_version": contract.current_version,
+        "ai_risk_score": contract.ai_risk_score,
+        "message": f"Contract {contract.contract_number} created and AI analyzed successfully."
+    }
+
+
 @router.get("/{contract_id}", summary="Get contract details and AI analysis")
 async def get_contract(
     contract_id: UUID,
