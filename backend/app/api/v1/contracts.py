@@ -58,15 +58,15 @@ def _evaluate_contract_status(start_date: Optional[datetime], end_date: Optional
 
 @router.get("/", summary="List all contracts")
 async def list_contracts(
-    supplier_id: Optional[UUID] = Query(None),
+    supplier_id: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     contract_type: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
-    expiring_soon: Optional[bool] = Query(False),
+    expiring_soon: Optional[str] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user=Depends(require_internal_user)
+    current_user=Depends(get_current_active_user)
 ):
     """List contracts with supplier filtering, status filtering, and expiry tracking."""
     query = db.query(Contract).options(joinedload(Contract.supplier)).filter(Contract.is_deleted == False)
@@ -103,7 +103,7 @@ async def list_contracts(
     contracts = query.order_by(Contract.created_at.desc()).offset(offset_val).limit(limit_val).all()
 
     # Auto-seed demo contracts if empty
-    if len(contracts) == 0 and not search and not supplier_id and not status:
+    if len(contracts) == 0 and not search and not supplier_id and not status and not contract_type:
         try:
             from app.core.seeder import seed_demo_data
             seed_demo_data()
@@ -113,29 +113,33 @@ async def list_contracts(
 
     results = []
     now = datetime.utcnow()
+    is_expiring = str(expiring_soon).lower().strip() in ("true", "1", "yes")
 
     for c in contracts:
         days_to_expiry = (c.end_date - now).days if c.end_date else 999
-        if isinstance(expiring_soon, bool) and expiring_soon and (days_to_expiry < 0 or days_to_expiry > 60):
+        if is_expiring and (days_to_expiry < 0 or days_to_expiry > 60):
             continue
+
+        c_type_str = c.contract_type.value if hasattr(c.contract_type, "value") else str(c.contract_type or "master_service")
+        c_status_str = c.status.value if hasattr(c.status, "value") else str(c.status or "active")
 
         results.append({
             "id": str(c.id),
-            "contract_number": c.contract_number,
+            "contract_number": str(c.contract_number),
             "supplier_id": str(c.supplier_id),
             "supplier_name": c.supplier.company_name if c.supplier else "Supplier",
-            "title": c.title,
-            "contract_type": c.contract_type.value if hasattr(c.contract_type, "value") else c.contract_type,
-            "status": c.status.value if hasattr(c.status, "value") else c.status,
+            "title": str(c.title or "Contract"),
+            "contract_type": c_type_str,
+            "status": c_status_str,
             "start_date": c.start_date.strftime("%Y-%m-%d") if c.start_date else None,
             "end_date": c.end_date.strftime("%Y-%m-%d") if c.end_date else None,
             "days_to_expiry": days_to_expiry if c.end_date else None,
-            "contract_value": c.contract_value or 0.0,
-            "currency": c.currency or "USD",
-            "auto_renew": c.auto_renew,
-            "notice_period_days": c.notice_period_days,
-            "current_version": c.current_version or 1,
-            "ai_risk_score": c.ai_risk_score,
+            "contract_value": float(c.contract_value or 0.0),
+            "currency": str(c.currency or "USD"),
+            "auto_renew": bool(c.auto_renew),
+            "notice_period_days": int(c.notice_period_days or 30),
+            "current_version": int(c.current_version or 1),
+            "ai_risk_score": float(c.ai_risk_score or 15.0),
             "has_document": True,
             "created_at": c.created_at.isoformat() if c.created_at else None,
         })
