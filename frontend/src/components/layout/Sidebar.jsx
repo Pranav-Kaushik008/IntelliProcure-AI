@@ -153,7 +153,7 @@ export default function Sidebar({ collapsed, onToggle }) {
               fontWeight: 800,
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: systemCollapsed ? "#94A3B8" : "#64748B",
+              color: "var(--text-muted)",
               padding: "6px 8px",
               display: "flex",
               alignItems: "center",
@@ -165,12 +165,12 @@ export default function Sidebar({ collapsed, onToggle }) {
               transition: "all 0.15s ease"
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-              e.currentTarget.style.color = "#FFFFFF";
+              e.currentTarget.style.background = "var(--bg-sidebar-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = systemCollapsed ? "#94A3B8" : "#64748B";
+              e.currentTarget.style.color = "var(--text-muted)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -182,8 +182,8 @@ export default function Sidebar({ collapsed, onToggle }) {
                   fontSize: 9,
                   fontWeight: 700,
                   opacity: 0.85,
-                  background: systemCollapsed ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.08)",
-                  color: systemCollapsed ? "#A5B4FC" : "inherit",
+                  background: systemCollapsed ? "rgba(99,102,241,0.15)" : "var(--bg-hover)",
+                  color: systemCollapsed ? "var(--primary)" : "var(--text-secondary)",
                   padding: "1px 6px",
                   borderRadius: 4,
                   transition: "all 0.15s ease"
@@ -218,18 +218,19 @@ export default function Sidebar({ collapsed, onToggle }) {
                   title={collapsed ? item.label : undefined}
                   style={{
                     justifyContent: collapsed ? "center" : "flex-start",
-                    padding: "8px 10px",
+                    padding: "8px 12px",
                     marginBottom: 2
                   }}
                 >
-                  <span className="nav-icon" style={{ fontSize: 17 }}>{item.icon}</span>
+                  <span className="nav-icon">{item.icon}</span>
                   <AnimatePresence>
                     {!collapsed && (
                       <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{ whiteSpace: "nowrap", fontSize: 13 }}
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.15 }}
+                        style={{ overflow: "hidden", whiteSpace: "nowrap" }}
                       >
                         {item.label}
                       </motion.span>
@@ -247,8 +248,8 @@ export default function Sidebar({ collapsed, onToggle }) {
                     gap: 10,
                     padding: "8px 10px",
                     borderRadius: 8,
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border-color)",
                     marginTop: 6
                   }}
                 >
@@ -263,16 +264,16 @@ export default function Sidebar({ collapsed, onToggle }) {
                       background: "linear-gradient(135deg, #3B82F6, #6366F1)",
                       color: "#FFFFFF",
                       fontWeight: 700,
-                      boxShadow: "0 2px 8px rgba(59, 130, 246, 0.4)"
+                      boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)"
                     }}
                   >
                     {user.first_name?.[0]}{user.last_name?.[0]}
                   </div>
                   <div style={{ overflow: "hidden", flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "#FFFFFF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {user.full_name || `${user.first_name} ${user.last_name}`}
                     </div>
-                    <div style={{ fontSize: 10.5, fontWeight: 600, color: "#818CF8", textTransform: "capitalize" }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--primary)", textTransform: "capitalize" }}>
                       {user.role?.replace("_", " ")}
                     </div>
                   </div>
@@ -296,18 +297,18 @@ export default function Sidebar({ collapsed, onToggle }) {
             background: "transparent",
             border: "none",
             borderRadius: 6,
-            color: "#64748B",
+            color: "var(--text-muted)",
             cursor: "pointer",
             marginTop: 4,
             fontSize: 18,
             transition: "all 0.15s ease"
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#FFFFFF";
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.color = "var(--text-primary)";
+            e.currentTarget.style.background = "var(--bg-hover)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#64748B";
+            e.currentTarget.style.color = "var(--text-muted)";
             e.currentTarget.style.background = "transparent";
           }}
         >

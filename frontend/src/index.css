@@ -34,18 +34,20 @@
   --bg-app: #F8FAFC;
   --bg-card: #FFFFFF;
   --bg-hover: #F1F5F9;
-  --bg-sidebar: #111827;
-  --bg-sidebar-hover: #1F2937;
-  --bg-sidebar-active: rgba(37, 99, 235, 0.15);
-  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-sidebar: #FFFFFF;
+  --bg-sidebar-hover: #F1F5F9;
+  --bg-sidebar-active: #EFF6FF;
+  --border-sidebar: #E2E8F0;
+  --bg-overlay: rgba(15, 23, 42, 0.4);
 
   /* Text */
   --text-primary: #0F172A;
   --text-secondary: #334155;
   --text-muted: #64748B;
   --text-inverse: #FFFFFF;
-  --text-sidebar: #9CA3AF;
-  --text-sidebar-active: #FFFFFF;
+  --text-sidebar: #475569;
+  --text-sidebar-active: #2563EB;
+  --text-sidebar-heading: #4F46E5;
 
   /* Borders */
   --border-color: #E2E8F0;
@@ -118,6 +120,7 @@
   --bg-sidebar: #080C14;
   --bg-sidebar-hover: #162032;
   --bg-sidebar-active: rgba(37, 99, 235, 0.25);
+  --border-sidebar: rgba(255, 255, 255, 0.08);
   --bg-overlay: rgba(0, 0, 0, 0.7);
 
   --text-primary: #F8FAFC;
@@ -126,6 +129,7 @@
   --text-inverse: #0F172A;
   --text-sidebar: #A0AEC0;
   --text-sidebar-active: #FFFFFF;
+  --text-sidebar-heading: #818CF8;
 
   --border-color: #243048;
   --border-subtle: #162032;
@@ -395,15 +399,22 @@ a:hover { color: var(--primary-dark); }
   color: var(--text-muted);
 }
 
-/* Fix: native <select> <option> elements — dark theme compatible colors */
-select.form-control,
-select.form-control option {
-  color: #f1f5f9;
-  background: #1e293b;
-}
-
+/* Native <select> <option> styling — fully theme adaptive */
 select.form-control {
   cursor: pointer;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+select.form-control option {
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] select.form-control,
+[data-theme="dark"] select.form-control option {
+  color: #F8FAFC;
+  background-color: #1E293B;
 }
 
 /* ─── Loading Skeleton ──────────────────────────────────────────────────── */
@@ -589,8 +600,8 @@ select.form-control {
   flex-direction: column;
   z-index: 100;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  transition: width var(--transition-slow);
+  border-right: 1px solid var(--border-sidebar);
+  transition: width var(--transition-slow), background var(--transition);
 }
 
 .sidebar.collapsed {
@@ -599,7 +610,7 @@ select.form-control {
 
 .sidebar-logo {
   padding: 20px var(--space-5);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-sidebar);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -632,7 +643,7 @@ select.form-control {
 .sidebar-logo-title {
   font-size: 15px;
   font-weight: 800;
-  color: white;
+  color: var(--text-primary);
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
@@ -640,7 +651,7 @@ select.form-control {
 .sidebar-logo-subtitle {
   font-size: 11px;
   font-weight: 500;
-  color: #94A3B8;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -662,7 +673,7 @@ select.form-control {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #818CF8;
+  color: var(--text-sidebar-heading);
   padding: 0 12px;
   margin-bottom: 6px;
   white-space: nowrap;
@@ -675,7 +686,7 @@ select.form-control {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #CBD5E1;
+  color: var(--text-sidebar);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
@@ -687,13 +698,13 @@ select.form-control {
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
+  background: var(--bg-sidebar-hover);
+  color: var(--text-primary);
 }
 
 .nav-item.active {
-  background: rgba(37, 99, 235, 0.25);
-  color: #FFFFFF;
+  background: var(--bg-sidebar-active);
+  color: var(--text-sidebar-active);
   font-weight: 700;
 }
 
@@ -705,9 +716,9 @@ select.form-control {
   transform: translateY(-50%);
   width: 4px;
   height: 65%;
-  background: #3B82F6;
+  background: var(--primary);
   border-radius: 0 4px 4px 0;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
 }
 
 .nav-icon {
@@ -718,13 +729,13 @@ select.form-control {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #94A3B8;
+  color: var(--text-muted);
   transition: color var(--transition-fast);
 }
 
 .nav-item:hover .nav-icon,
 .nav-item.active .nav-icon {
-  color: #60A5FA;
+  color: var(--primary);
 }
 
 .nav-badge {
@@ -741,11 +752,8 @@ select.form-control {
 
 .sidebar-footer {
   padding: 10px 10px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 29, 0.98) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+  border-top: 1px solid var(--border-sidebar);
+  background: var(--bg-sidebar);
   position: relative;
   z-index: 10;
   flex-shrink: 0;
