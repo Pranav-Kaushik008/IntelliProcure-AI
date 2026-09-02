@@ -110,17 +110,22 @@ async def request_logging_middleware(request: Request, call_next):
 # ─── Exception Handlers ───────────────────────────────────────────────────────
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Return structured validation errors."""
+    """Return structured validation errors with clear error messages."""
     errors = []
+    messages = []
     for error in exc.errors():
+        field = " → ".join(str(loc) for loc in error["loc"] if loc not in ("body",))
+        msg = error["msg"]
         errors.append({
-            "field": " → ".join(str(loc) for loc in error["loc"]),
-            "message": error["msg"],
+            "field": field,
+            "message": msg,
             "type": error["type"]
         })
+        messages.append(f"{field}: {msg}" if field else msg)
+    detail_str = "; ".join(messages) if messages else "Validation failed"
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": "Validation failed", "errors": errors}
+        content={"detail": detail_str, "errors": errors}
     )
 
 
