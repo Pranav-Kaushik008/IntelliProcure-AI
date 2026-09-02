@@ -14,7 +14,8 @@ import {
   MdCheckCircle,
   MdHistory,
   MdRefresh,
-  MdVisibility
+  MdVisibility,
+  MdDelete
 } from "react-icons/md";
 import toast from "react-hot-toast";
 import { api } from "../../contexts/AuthContext";
@@ -227,6 +228,24 @@ export default function ContractsPage() {
     }
   };
 
+  // ── Handle Delete Contract ──────────────────────────────────────────────────
+  const handleDeleteContract = async (contract) => {
+    if (!window.confirm(`Are you sure you want to delete contract ${contract.contract_number} ("${contract.title}")?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/contracts/${contract.id}`);
+      toast.success(`Contract ${contract.contract_number} deleted successfully`);
+      if (selectedContract?.id === contract.id) {
+        setSelectedContract(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ["contracts-list"] });
+      refetch();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Failed to delete contract");
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
       {/* Header */}
@@ -356,6 +375,16 @@ export default function ContractsPage() {
                         {c.has_document && (
                           <button className="btn btn-ghost btn-sm" onClick={() => handleSecureDownload(c.id)} title="Secure Download">
                             <MdDownload fontSize={16} />
+                          </button>
+                        )}
+                        {canManageContracts && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: "var(--danger)" }}
+                            onClick={() => handleDeleteContract(c)}
+                            title="Delete Contract"
+                          >
+                            <MdDelete fontSize={16} />
                           </button>
                         )}
                       </div>
@@ -665,7 +694,12 @@ export default function ContractsPage() {
               </div>
 
               {/* Footer Actions */}
-              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                {canManageContracts && (
+                  <button className="btn btn-danger" onClick={() => handleDeleteContract(selectedContract)} style={{ marginRight: "auto" }}>
+                    <MdDelete /> Delete Contract
+                  </button>
+                )}
                 <button className="btn btn-secondary" onClick={() => setSelectedContract(null)}>Close</button>
                 <button className="btn btn-warning" onClick={() => { setRenewForm({ new_end_date: selectedContract.end_date || "", contract_value: selectedContract.contract_value || 0 }); setIsRenewModalOpen(true); }}>
                   Renew Contract

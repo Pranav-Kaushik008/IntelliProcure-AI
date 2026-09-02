@@ -783,3 +783,28 @@ Contract Reference: {c.contract_number}
         filename=file_name,
         media_type=media_type
     )
+
+
+@router.delete("/{contract_id}", summary="Delete / Terminate contract")
+async def delete_contract(
+    contract_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_internal_user)
+):
+    """
+    Delete or terminate a contract agreement.
+    Performs soft deletion and marks status as TERMINATED.
+    """
+    c = db.query(Contract).filter(Contract.id == contract_id, Contract.is_deleted == False).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Contract not found or already deleted.")
+
+    c.is_deleted = True
+    c.deleted_at = datetime.utcnow()
+    c.status = ContractStatus.TERMINATED
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Contract {c.contract_number} ({c.title}) has been deleted successfully."
+    }
