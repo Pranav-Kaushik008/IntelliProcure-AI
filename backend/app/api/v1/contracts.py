@@ -71,15 +71,31 @@ async def list_contracts(
     """List contracts with supplier filtering, status filtering, and expiry tracking."""
     query = db.query(Contract).options(joinedload(Contract.supplier)).filter(Contract.is_deleted == False)
 
-    if supplier_id and isinstance(supplier_id, (UUID, str)):
-        query = query.filter(Contract.supplier_id == supplier_id)
-    if status and isinstance(status, (ContractStatus, str)):
-        query = query.filter(Contract.status == status)
-    if contract_type and isinstance(contract_type, (ContractType, str)):
-        query = query.filter(Contract.contract_type == contract_type)
-    if search and isinstance(search, str):
+    if supplier_id and str(supplier_id).strip():
+        try:
+            sup_uuid = UUID(str(supplier_id).strip())
+            query = query.filter(Contract.supplier_id == sup_uuid)
+        except Exception:
+            pass
+
+    if status and str(status).strip():
+        try:
+            st_val = ContractStatus(str(status).lower().strip())
+            query = query.filter(Contract.status == st_val)
+        except Exception:
+            pass
+
+    if contract_type and str(contract_type).strip():
+        try:
+            ct_val = ContractType(str(contract_type).lower().strip())
+            query = query.filter(Contract.contract_type == ct_val)
+        except Exception:
+            pass
+
+    if search and str(search).strip():
+        s_term = f"%{str(search).strip()}%"
         query = query.filter(
-            (Contract.title.ilike(f"%{search}%")) | (Contract.contract_number.ilike(f"%{search}%"))
+            (Contract.title.ilike(s_term)) | (Contract.contract_number.ilike(s_term))
         )
 
     offset_val = skip if isinstance(skip, int) else 0

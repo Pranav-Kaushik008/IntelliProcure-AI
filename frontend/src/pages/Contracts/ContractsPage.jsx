@@ -143,11 +143,15 @@ export default function ContractsPage() {
       }
       toast.success("Contract registered & AI analyzed successfully! 📜");
       setIsUploadModalOpen(false);
+      setTypeFilter("");
+      setStatusFilter("");
+      setSearch("");
       setUploadForm({
         title: "", supplier_id: "", contract_type: "master_service",
         start_date: "", end_date: "", contract_value: "", currency: "USD",
         auto_renew: false, notice_period_days: 30, notes: "", file: null
       });
+      queryClient.invalidateQueries({ queryKey: ["contracts-list"] });
       refetch();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Contract registration failed. Please try again.");
