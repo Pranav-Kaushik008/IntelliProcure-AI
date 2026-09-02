@@ -236,7 +236,15 @@ export default function ContractsPage() {
           <p className="page-subtitle">Central repository, version control, secure download, and 6-clause AI extraction engine.</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-secondary" onClick={() => refetch()}>
+          <button className="btn btn-secondary" onClick={() => {
+            setSearch("");
+            setTypeFilter("");
+            setStatusFilter("");
+            setExpiringFilter(false);
+            queryClient.invalidateQueries({ queryKey: ["contracts-list"] });
+            refetch();
+            toast.success("Contracts refreshed");
+          }}>
             <MdRefresh fontSize={18} /> Refresh
           </button>
           {canManageContracts && (
