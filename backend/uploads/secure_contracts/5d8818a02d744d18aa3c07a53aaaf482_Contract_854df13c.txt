@@ -1,0 +1,28 @@
+================================================================================
+INTELLIPROCURE AI ENTERPRISE CONTRACT & SERVICE LEVEL AGREEMENT
+Contract Reference: CNT-2026-0002
+================================================================================
+
+1. PARTIES & SCOPE
+   - Enterprise Organization: IntelliProcure AI Global Enterprise
+   - Supplier Partner: GlobalSupply Co.
+   - Contract Title: Enterprise Hardware Supply & On-Site Maintenance SLA
+   - Contract Type: sla
+   - Total Committed Value: $280,000.00 USD
+   - Effective Period: 2026-05-03 to 2027-05-03
+   - Auto-Renewal: Active (60 days notice)
+
+2. AI LEGAL ANALYSIS & CLAUSE SUMMARY
+   Hardware procurement framework with volume tier discounts (5-12%), 4-hour on-site replacement SLA for mission-critical server hardware.
+
+3. EXTRACTED OBLIGATIONS & KEY CLAUSES
+   - Payment Terms: Net 30 days from invoice receipt, electronic bank transfer.
+   - Termination: 30 days written notice for convenience; immediate for material breach.
+   - Liability & Indemnity: Standard mutual indemnity capped at 1.5x contract value.
+   - Performance SLA: 99.95% availability with tiered penalty credits on downtime.
+
+4. COMPLIANCE & GOVERNANCE
+   - Version: v2
+   - Status: active
+   - Verified by IntelliProcure AI Legal Intelligence Engine
+================================================================================
