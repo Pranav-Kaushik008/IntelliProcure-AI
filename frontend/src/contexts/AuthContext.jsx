@@ -6,6 +6,9 @@ const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/+$/, "");
   }
+  if (typeof window !== "undefined" && window.location.hostname.includes("onrender.com")) {
+    return "https://intelliprocure-ai.onrender.com/api/v1";
+  }
   return "http://localhost:8000/api/v1";
 };
 

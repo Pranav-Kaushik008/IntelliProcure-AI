@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List, Dict, Any
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import uuid
 import pathlib
@@ -39,6 +39,19 @@ ALLOWED_CONTRACT_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB limit
 
 
+def _calc_days_remaining(dt: Optional[datetime]) -> int:
+    if not dt:
+        return 999
+    try:
+        if dt.tzinfo is not None:
+            now = datetime.now(timezone.utc)
+        else:
+            now = datetime.utcnow()
+        return (dt - now).days
+    except Exception:
+        return 999
+
+
 def _generate_contract_number(db: Session) -> str:
     count = db.query(Contract).count()
     return f"CNT-{datetime.now().year}-{count + 1:04d}"
@@ -48,10 +61,10 @@ def _evaluate_contract_status(start_date: Optional[datetime], end_date: Optional
     if current_status in [ContractStatus.TERMINATED, ContractStatus.DRAFT]:
         return current_status
     if end_date:
-        now = datetime.utcnow()
-        if now > end_date:
+        days = _calc_days_remaining(end_date)
+        if days < 0:
             return ContractStatus.EXPIRED
-        elif (end_date - now).days <= 60:
+        elif days <= 60:
             return ContractStatus.ACTIVE  # Active but expiring soon
     return ContractStatus.ACTIVE
 
@@ -112,12 +125,11 @@ async def list_contracts(
             pass
 
     results = []
-    now = datetime.utcnow()
     is_expiring = str(expiring_soon).lower().strip() in ("true", "1", "yes")
 
     for c in contracts:
-        days_to_expiry = (c.end_date - now).days if c.end_date else 999
-        if is_expiring and (days_to_expiry < 0 or days_to_expiry > 60):
+        days_to_expiry = _calc_days_remaining(c.end_date) if c.end_date else None
+        if is_expiring and (days_to_expiry is None or days_to_expiry < 0 or days_to_expiry > 60):
             continue
 
         c_type_str = c.contract_type.value if hasattr(c.contract_type, "value") else str(c.contract_type or "master_service")
@@ -448,8 +460,7 @@ async def get_contract(
     if not c:
         raise HTTPException(status_code=404, detail="Contract not found.")
 
-    now = datetime.utcnow()
-    days_remaining = (c.end_date - now).days if c.end_date else 999
+    days_remaining = _calc_days_remaining(c.end_date)
 
     # Ensure structured AI analysis is present
     extracted_clauses = c.ai_key_clauses
