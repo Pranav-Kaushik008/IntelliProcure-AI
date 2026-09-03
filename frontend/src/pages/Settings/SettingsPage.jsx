@@ -95,9 +95,29 @@ export default function SettingsPage() {
   };
 
   const handleToggleUserStatus = async (targetUser) => {
+    const isCurrentlyActive = targetUser.is_active;
+    const action = isCurrentlyActive ? "deactivate" : "activate";
+
+    if (isCurrentlyActive) {
+      if (targetUser.id === user?.id) {
+        toast.error("Security Protection: You cannot deactivate your own active Administrator account.");
+        return;
+      }
+      if (targetUser.email?.toLowerCase() === "pranavkaushikyr@gmail.com") {
+        toast.error("Security Protection: The Master Administrator account cannot be deactivated.");
+        return;
+      }
+
+      const confirmMsg = `⚠️ CONFIRM ACCOUNT DEACTIVATION:\n\nAre you sure you want to DEACTIVATE the user account for:\n• Name: ${targetUser.full_name || `${targetUser.first_name || ""} ${targetUser.last_name || ""}`.trim() || "User"}\n• Email: ${targetUser.email}\n• Role: ${targetUser.role?.toUpperCase()}\n\nThis user will be blocked from logging into the IntelliProcure AI platform.`;
+      if (!window.confirm(confirmMsg)) return;
+    } else {
+      const confirmMsg = `Activate account for "${targetUser.email}"?`;
+      if (!window.confirm(confirmMsg)) return;
+    }
+
     try {
-      await api.patch(`/users/${targetUser.id}/status`, { is_active: !targetUser.is_active });
-      toast.success(`User ${targetUser.email} status updated!`);
+      await api.patch(`/users/${targetUser.id}/status`, { is_active: !isCurrentlyActive });
+      toast.success(`User ${targetUser.email} has been ${action}d successfully!`);
       fetchUsers();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Failed to update user status");
@@ -106,13 +126,17 @@ export default function SettingsPage() {
 
   const handleDeleteUser = async (targetUser) => {
     if (targetUser.id === user?.id) {
-      toast.error("You cannot delete your own account");
+      toast.error("Security Protection: You cannot delete your own active Administrator account.");
       return;
     }
-    if (!window.confirm(`Are you sure you want to deactivate and remove ${targetUser.email}?`)) return;
+    if (targetUser.email?.toLowerCase() === "pranavkaushikyr@gmail.com") {
+      toast.error("Security Protection: The Master Administrator account cannot be deleted.");
+      return;
+    }
+    if (!window.confirm(`⚠️ PERMANENT REMOVAL:\n\nAre you sure you want to deactivate and remove ${targetUser.email}?`)) return;
     try {
       await api.delete(`/users/${targetUser.id}`);
-      toast.success(`User ${targetUser.email} deleted!`);
+      toast.success(`User ${targetUser.email} removed successfully!`);
       fetchUsers();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Failed to delete user");

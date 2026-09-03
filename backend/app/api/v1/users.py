@@ -113,8 +113,15 @@ async def toggle_user_status(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    is_active = payload.get("is_active", False)
-    target_user.is_active = bool(is_active)
+    is_active = bool(payload.get("is_active", False))
+
+    if not is_active:
+        if target_user.id == current_user.id:
+            raise HTTPException(status_code=400, detail="Security Violation: You cannot deactivate your own active Administrator account.")
+        if target_user.email.lower() == "pranavkaushikyr@gmail.com":
+            raise HTTPException(status_code=400, detail="Security Violation: The Master Administrator account cannot be deactivated.")
+
+    target_user.is_active = is_active
     db.commit()
     db.refresh(target_user)
     return {
@@ -135,7 +142,9 @@ async def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     if target_user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Admin cannot delete their own active account")
+        raise HTTPException(status_code=400, detail="Security Violation: Admin cannot delete their own active account.")
+    if target_user.email.lower() == "pranavkaushikyr@gmail.com":
+        raise HTTPException(status_code=400, detail="Security Violation: The Master Administrator account cannot be deleted.")
 
     target_user.is_deleted = True
     target_user.is_active = False
