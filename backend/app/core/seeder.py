@@ -32,13 +32,24 @@ def seed_demo_data():
     try:
         # ── Admin User ─────────────────────────────────────────────────────
         admin = db.query(User).filter(User.email == "pranavkaushikyr@gmail.com").first()
-        if not admin:
+        if admin:
+            admin.is_active = True
+            admin.is_deleted = False
+            admin.is_verified = True
+            admin.role = UserRole.ADMIN
+            admin.hashed_password = get_password_hash("Admin@1234")
+            db.commit()
+        else:
             old = db.query(User).filter(User.email == "admin@intelliprocure.ai").first()
             if old:
                 old.email = "pranavkaushikyr@gmail.com"
                 old.hashed_password = get_password_hash("Admin@1234")
                 old.first_name = "Pranav"
                 old.last_name = "Kaushik"
+                old.is_active = True
+                old.is_deleted = False
+                old.is_verified = True
+                old.role = UserRole.ADMIN
                 db.commit()
                 admin = old
             else:
