@@ -35,15 +35,6 @@ export default function SettingsPage() {
   const [newDeptName, setNewDeptName] = useState("");
   const [isAddingDept, setIsAddingDept] = useState(false);
 
-  // Change Password state
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isChangingPwd, setIsChangingPwd] = useState(false);
-
   const fetchUsers = async () => {
     if (!isAdmin) return;
     setIsLoadingUsers(true);
@@ -159,37 +150,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("Please fill in all password fields");
-      return;
-    }
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-    setIsChangingPwd(true);
-    try {
-      await api.post("/auth/change-password", {
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
-      toast.success("Password changed successfully!");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || "Failed to change password");
-    } finally {
-      setIsChangingPwd(false);
-    }
-  };
-
   const handleAssignRole = async (e) => {
     e.preventDefault();
     if (!assignEmail) {
@@ -228,7 +188,6 @@ export default function SettingsPage() {
           ...(isAdmin ? [{ id: "roles", label: "User Management & Role Assignment", icon: <MdGroupAdd /> }] : []),
           ...(isAdmin ? [{ id: "erp", label: "ERP Integration Readiness", icon: <MdCloudSync /> }] : []),
           { id: "general", label: "Organization & Departments", icon: <MdBusiness /> },
-          { id: "security", label: "Security & SSO", icon: <MdSecurity /> },
           { id: "audit", label: "Compliance Audit Trail", icon: <MdHistory /> }
         ].map((tab) => (
           <button
@@ -583,150 +542,6 @@ export default function SettingsPage() {
                 )}
               </tbody>
             </table>
-          </div>
-        </div>)}
-
-      {/* Security Tab — Change Password */}
-      {activeTab === "security" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div className="card" style={{ padding: 28, maxWidth: 520 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: "var(--gradient-brand)",
-                display: "flex", alignItems: "center", justifyContent: "center"
-              }}>
-                <MdLock fontSize={22} color="#fff" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>Change Password</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Update your account password</div>
-              </div>
-            </div>
-
-            <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Current Password */}
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: "block" }}>
-                  Current Password
-                </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showCurrent ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="form-input"
-                    placeholder="Enter current password"
-                    style={{ paddingRight: 40 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent(!showCurrent)}
-                    style={{
-                      position: "absolute", right: 12, top: "50%",
-                      transform: "translateY(-50%)", background: "none",
-                      border: "none", cursor: "pointer", color: "var(--text-muted)"
-                    }}
-                  >
-                    {showCurrent ? <MdVisibilityOff fontSize={18} /> : <MdVisibility fontSize={18} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* New Password */}
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: "block" }}>
-                  New Password
-                </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showNew ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="form-input"
-                    placeholder="Min. 8 characters"
-                    style={{ paddingRight: 40 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew(!showNew)}
-                    style={{
-                      position: "absolute", right: 12, top: "50%",
-                      transform: "translateY(-50%)", background: "none",
-                      border: "none", cursor: "pointer", color: "var(--text-muted)"
-                    }}
-                  >
-                    {showNew ? <MdVisibilityOff fontSize={18} /> : <MdVisibility fontSize={18} />}
-                  </button>
-                </div>
-                {newPassword.length > 0 && (
-                  <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {[
-                      { label: "8+ chars", ok: newPassword.length >= 8 },
-                      { label: "Uppercase", ok: /[A-Z]/.test(newPassword) },
-                      { label: "Number", ok: /\d/.test(newPassword) },
-                    ].map(({ label, ok }) => (
-                      <span key={label} style={{
-                        fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
-                        background: ok ? "rgba(16,185,129,0.12)" : "var(--bg-app)",
-                        color: ok ? "#10b981" : "var(--text-muted)",
-                        border: `1px solid ${ok ? "rgba(16,185,129,0.3)" : "var(--border-color)"}`
-                      }}>
-                        {ok ? "✓" : "·"} {label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: "block" }}>
-                  Confirm New Password
-                </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showConfirm ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="form-input"
-                    placeholder="Repeat new password"
-                    style={{
-                      paddingRight: 40,
-                      borderColor: confirmPassword && newPassword !== confirmPassword ? "#ef4444" : undefined
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(!showConfirm)}
-                    style={{
-                      position: "absolute", right: 12, top: "50%",
-                      transform: "translateY(-50%)", background: "none",
-                      border: "none", cursor: "pointer", color: "var(--text-muted)"
-                    }}
-                  >
-                    {showConfirm ? <MdVisibilityOff fontSize={18} /> : <MdVisibility fontSize={18} />}
-                  </button>
-                </div>
-                {confirmPassword && newPassword !== confirmPassword && (
-                  <div style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>Passwords do not match</div>
-                )}
-                {confirmPassword && newPassword === confirmPassword && (
-                  <div style={{ fontSize: 12, color: "#10b981", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                    <MdCheckCircle /> Passwords match
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isChangingPwd}
-                style={{ marginTop: 4 }}
-              >
-                {isChangingPwd ? "Changing..." : "Change Password"}
-              </button>
-            </form>
           </div>
         </div>
       )}
