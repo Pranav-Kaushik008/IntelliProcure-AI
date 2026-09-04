@@ -50,6 +50,39 @@ export default function TopNav({ collapsed }) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+  const searchInputRef = useRef(null);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === "Enter" && searchValue.trim()) {
+      const q = searchValue.toLowerCase();
+      if (q.includes("sup") || q.includes("vendor")) navigate("/suppliers");
+      else if (q.includes("po") || q.includes("order")) navigate("/purchase-orders");
+      else if (q.includes("pr") || q.includes("request")) navigate("/purchase-requests");
+      else if (q.includes("rfq") || q.includes("quote")) navigate("/rfqs");
+      else if (q.includes("inv") || q.includes("bill")) navigate("/invoices");
+      else if (q.includes("match") || q.includes("3-way")) navigate("/matching");
+      else if (q.includes("contract")) navigate("/contracts");
+      else if (q.includes("inventory") || q.includes("stock")) navigate("/inventory");
+      else if (q.includes("ai") || q.includes("copilot")) navigate("/ai-assistant");
+      else if (q.includes("report")) navigate("/reports");
+      else if (q.includes("budget")) navigate("/budget");
+      else if (q.includes("compliance") || q.includes("audit")) navigate("/compliance");
+      else navigate(`/suppliers?search=${encodeURIComponent(searchValue.trim())}`);
+      setSearchValue("");
+    }
+  };
   const pathParts = location.pathname.split("/").filter(Boolean);
   const currentPage = ROUTE_LABELS[pathParts[0]] || "Dashboard";
   return <header className={`topnav ${collapsed ? "collapsed" : ""}`}>
@@ -58,7 +91,7 @@ export default function TopNav({ collapsed }) {
   }
       <div className="topnav-left">
         <nav className="breadcrumb">
-          <span className="breadcrumb-item">Home</span>
+          <span className="breadcrumb-item" style={{ cursor: "pointer" }} onClick={() => navigate("/dashboard")}>Home</span>
           <span className="breadcrumb-sep">›</span>
           <span className="breadcrumb-item active">{currentPage}</span>
         </nav>
@@ -69,21 +102,24 @@ export default function TopNav({ collapsed }) {
         <div className="search-bar">
           <MdSearch style={{ color: "var(--text-muted)", fontSize: 18, flexShrink: 0 }} />
           <input
+    ref={searchInputRef}
     className="search-input"
     type="text"
-    placeholder="Search suppliers, POs, invoices..."
+    placeholder="Search suppliers, POs, invoices... (Press Enter)"
     value={searchValue}
     onChange={(e) => setSearchValue(e.target.value)}
+    onKeyDown={handleSearchSubmit}
   />
           <kbd style={{
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: 700,
     background: "var(--border-subtle)",
     border: "1px solid var(--border-color)",
-    borderRadius: 4,
+    borderRadius: 5,
     padding: "2px 6px",
     color: "var(--text-muted)",
     flexShrink: 0
-  }}>⌘K</kbd>
+  }}>Ctrl+K</kbd>
         </div>
       </div>
 
