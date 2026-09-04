@@ -41,10 +41,14 @@ export default function TopNav({ collapsed }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const profileRef = useRef(null);
+  const notifRef = useRef(null);
   useEffect(() => {
     function handleClick(e) {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
@@ -133,7 +137,6 @@ export default function TopNav({ collapsed }) {
         <button
     className="icon-btn"
     onClick={toggleTheme}
-    data-tooltip={theme === "light" ? "Dark Mode" : "Light Mode"}
     style={{ fontSize: 18 }}
   >
           {theme === "light" ? <MdDarkMode /> : <MdLightMode />}
@@ -142,10 +145,9 @@ export default function TopNav({ collapsed }) {
         {
     /* Notifications */
   }
-        <div style={{ position: "relative" }}>
+        <div ref={notifRef} style={{ position: "relative" }}>
           <button
     className="icon-btn"
-    data-tooltip="Live Notifications"
     style={{ fontSize: 20, position: "relative" }}
     onClick={() => setNotifOpen(!notifOpen)}
   >
