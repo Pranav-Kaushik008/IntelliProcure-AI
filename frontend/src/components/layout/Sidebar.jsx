@@ -28,7 +28,7 @@ import {
 
 const NAV_ITEMS = [
   // Main
-  { path: "/dashboard", label: "Dashboard", icon: <MdDashboard />, section: "MAIN" },
+  { path: "/dashboard", label: "Dashboard", icon: <MdDashboard />, section: "MAIN", liveDot: true },
   // Procurement
   { path: "/suppliers", label: "Suppliers", icon: <MdBusiness />, section: "PROCUREMENT" },
   { path: "/purchase-requests", label: "Purchase Requests", icon: <MdShoppingCart /> },
@@ -43,7 +43,7 @@ const NAV_ITEMS = [
   // Intelligence
   { path: "/analytics", label: "Analytics", icon: <MdBarChart />, section: "INTELLIGENCE" },
   { path: "/analytics/spend-forecast", label: "Spend Forecast", icon: <MdAssessment /> },
-  { path: "/ai-assistant", label: "AI Copilot", icon: <MdSmartToy /> },
+  { path: "/ai-assistant", label: "AI Copilot", icon: <MdSmartToy />, badge: "✨ AI" },
   { path: "/reports", label: "Reports", icon: <MdAssessment /> },
   // Governance
   { path: "/compliance", label: "Compliance", icon: <MdNotifications />, section: "GOVERNANCE" },
@@ -119,7 +119,10 @@ export default function Sidebar({ collapsed, onToggle }) {
                 end
                 className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
                 title={item.label}
-                style={{ justifyContent: collapsed ? "center" : "flex-start" }}
+                style={{
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  position: "relative"
+                }}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <AnimatePresence>
@@ -129,9 +132,45 @@ export default function Sidebar({ collapsed, onToggle }) {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.15 }}
-                      style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+                      style={{
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flex: 1
+                      }}
                     >
-                      {item.label}
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            padding: "2px 6px",
+                            borderRadius: 6,
+                            background: "linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.2) 100%)",
+                            color: "var(--primary)",
+                            border: "1px solid rgba(99,102,241,0.3)",
+                            letterSpacing: "0.04em",
+                            marginLeft: 6
+                          }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                      {item.liveDot && (
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: "#10B981",
+                            boxShadow: "0 0 8px rgba(16,185,129,0.7)",
+                            marginLeft: 6
+                          }}
+                        />
+                      )}
                     </motion.span>
                   )}
                 </AnimatePresence>
