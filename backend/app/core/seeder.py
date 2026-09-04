@@ -135,22 +135,34 @@ def seed_demo_data():
             db.add(auditor_user)
             db.commit()
 
-        # Supplier demo user
-        supplier_user = db.query(User).filter(User.email == "orders@techcore.com").first()
-        if not supplier_user:
-            supplier_user = User(
-                email="orders@techcore.com",
-                hashed_password=get_password_hash("Supplier@1234"),
-                first_name="David",
-                last_name="Lee",
-                role="supplier",
-                department="External Vendor",
-                job_title="Account Executive",
-                is_active=True,
-                is_verified=True,
-            )
-            db.add(supplier_user)
-            db.commit()
+        # Supplier demo users
+        suppliers_to_seed = [
+            ("orders@techcore.com", "David", "Lee", "TechCore Industries", "Account Executive"),
+            ("procurement@globalsupply.com", "Emma", "Williams", "GlobalSupply Co.", "Procurement Manager"),
+            ("contracts@apexfacilities.com", "James", "Rivera", "Apex Facilities Group", "Contracts Lead")
+        ]
+
+        for s_email, s_fname, s_lname, s_dept, s_title in suppliers_to_seed:
+            s_user = db.query(User).filter(User.email == s_email).first()
+            if not s_user:
+                s_user = User(
+                    email=s_email,
+                    hashed_password=get_password_hash("Supplier@1234"),
+                    first_name=s_fname,
+                    last_name=s_lname,
+                    role="supplier",
+                    department=s_dept,
+                    job_title=s_title,
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(s_user)
+                db.commit()
+            else:
+                s_user.is_active = True
+                s_user.is_verified = True
+                s_user.hashed_password = get_password_hash("Supplier@1234")
+                db.commit()
 
 
         # ── Suppliers ──────────────────────────────────────────────────────
