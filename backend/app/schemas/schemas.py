@@ -79,6 +79,7 @@ class UserResponse(BaseModel):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     is_active: bool
+    is_verified: bool = False
     theme: str
     last_login: Optional[datetime] = None
     created_at: datetime

@@ -178,6 +178,62 @@ async def delete_supplier(
     db.commit()
 
 
+@router.patch("/{supplier_id}/verify", response_model=SupplierResponse)
+async def verify_supplier(
+    supplier_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("admin", "manager", "buyer"))
+):
+    """Admin/Procurement: Authorize and verify a pending supplier for RFQ bidding."""
+    from app.models.supplier import SupplierStatus
+    from app.models.user import User
+    from app.services.audit_service import AuditService
+
+    supplier = db.query(Supplier).filter(Supplier.id == supplier_id, Supplier.is_deleted == False).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+
+    supplier.status = SupplierStatus.ACTIVE
+    supplier.risk_level = "low"
+
+    # Also verify associated user account if registered
+    linked_user = db.query(User).filter(User.email == supplier.email).first()
+    if linked_user:
+        linked_user.is_verified = True
+        linked_user.is_active = True
+
+    db.commit()
+    db.refresh(supplier)
+
+    try:
+        from app.services.notification_service import broadcast_notification
+        broadcast_notification(
+            db=db,
+            title="Supplier KYC Authorized ✅",
+            message=f"Supplier '{supplier.company_name}' has been verified and authorized for enterprise RFQ bidding.",
+            notification_type="success",
+            action_url="/suppliers",
+            reference_id=str(supplier.id),
+            reference_type="supplier"
+        )
+    except Exception:
+        pass
+
+    try:
+        AuditService.log_event(
+            db=db,
+            action="SUPPLIER_VERIFIED",
+            entity_type="supplier",
+            entity_id=supplier.supplier_code,
+            user_id=current_user.id,
+            changes={"company_name": supplier.company_name, "status": "active", "is_verified": True}
+        )
+    except Exception:
+        pass
+
+    return supplier
+
+
 @router.get("/stats/summary")
 async def supplier_stats(
     db: Session = Depends(get_db),

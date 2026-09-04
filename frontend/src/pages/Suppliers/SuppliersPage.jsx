@@ -14,7 +14,8 @@ import {
   MdFilterList,
   MdSort,
   MdChevronLeft,
-  MdChevronRight
+  MdChevronRight,
+  MdVerified
 } from "react-icons/md";
 import { api } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -181,6 +182,18 @@ export default function SuppliersPage() {
     }
   };
 
+  // ── Authorize & Verify Supplier ─────────────────────────────────────────────
+  const handleVerifySupplier = async (supplier) => {
+    if (!window.confirm(`Authorize and verify "${supplier.company_name}" for enterprise RFQ bidding and procurement fulfillment?`)) return;
+    try {
+      await api.patch(`/suppliers/${supplier.id}/verify`);
+      toast.success(`Supplier "${supplier.company_name}" successfully verified & authorized! 🎉`);
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Failed to verify supplier");
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Page Header */}
@@ -247,14 +260,14 @@ export default function SuppliersPage() {
         {/* Status Filter */}
         <select
           className="form-control"
-          style={{ width: 130 }}
+          style={{ width: 160 }}
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
           <option value="">All Statuses</option>
-          <option value="active">Active</option>
+          <option value="active">Active Certified</option>
+          <option value="pending_approval">⏳ Pending KYC Review</option>
           <option value="inactive">Inactive</option>
-          <option value="pending">Pending</option>
         </select>
 
         {/* Sort By */}
@@ -355,12 +368,22 @@ export default function SuppliersPage() {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge badge-${s.status === "active" ? "success" : "gray"}`}>
-                        {s.status}
+                      <span className={`badge badge-${s.status === "active" ? "success" : s.status === "pending_approval" || s.status === "pending" ? "warning" : "gray"}`}>
+                        {s.status === "pending_approval" || s.status === "pending" ? "⏳ Pending KYC" : s.status}
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                        {canManageSuppliers && (s.status === "pending_approval" || s.status === "pending" || s.status === "inactive") && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleVerifySupplier(s)}
+                            style={{ background: "#10b981", borderColor: "#10b981", color: "#fff", display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, padding: "4px 8px", fontSize: 11 }}
+                            title="Authorize & Verify Supplier for Bidding"
+                          >
+                            <MdVerified fontSize={14} /> Authorize
+                          </button>
+                        )}
                         <button
                           className="btn btn-ghost btn-sm"
                           onClick={() => setViewSupplier(s)}

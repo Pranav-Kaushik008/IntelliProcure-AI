@@ -286,6 +286,31 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Supplier KYC Pending Banner */}
+      {useAuth().isSupplier && useAuth().user?.is_verified === false && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(239,68,68,0.06) 100%)",
+            border: "1px solid rgba(245,158,11,0.3)",
+            borderRadius: 14,
+            padding: "18px 22px",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 16
+          }}
+        >
+          <div style={{ fontSize: 32 }}>⏳</div>
+          <div style={{ flex: 1 }}>
+            <strong style={{ fontSize: 14.5, color: "#F59E0B" }}>Vendor Authorization & KYC Verification Pending</strong>
+            <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: "4px 0 0" }}>
+              Your supplier profile has been submitted and is awaiting approval by Enterprise Procurement. Once authorized, you will be cleared to submit quotation bids and fulfill Purchase Orders.
+            </p>
+          </div>
+          <span className="badge badge-warning" style={{ fontSize: 12, padding: "6px 12px" }}>Under Review</span>
+        </div>
+      )}
+
       {/* ── Primary KPI Cards ──────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
         {primaryKpis.map((k, i) => (

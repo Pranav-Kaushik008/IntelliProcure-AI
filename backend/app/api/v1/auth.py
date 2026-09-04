@@ -84,8 +84,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
     # Auto-generate supplier_code style for users
+    is_sup = user_data.role == "supplier"
     user = User(
-        email=user_data.email,
+        email=email_clean,
         hashed_password=get_password_hash(user_data.password),
         first_name=user_data.first_name,
         last_name=user_data.last_name,
@@ -94,9 +95,43 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         job_title=user_data.job_title,
         phone=user_data.phone,
         is_active=True,
-        is_verified=False,
+        is_verified=False if is_sup else True,
     )
     db.add(user)
+
+    # If supplier, provision pending Supplier profile
+    if is_sup:
+        from app.models.supplier import Supplier, SupplierStatus
+        import random, string
+        company_name = user_data.department or f"{user_data.first_name}'s Enterprise"
+        existing_sup = db.query(Supplier).filter(Supplier.email == email_clean).first()
+        if not existing_sup:
+            sup_code = f"SUP-{''.join(random.choices(string.digits, k=6))}"
+            sup = Supplier(
+                supplier_code=sup_code,
+                company_name=company_name,
+                email=email_clean,
+                phone=user_data.phone,
+                contact_person=f"{user_data.first_name} {user_data.last_name}",
+                status=SupplierStatus.PENDING_APPROVAL,
+                description="Self-registered external supplier awaiting KYC authorization."
+            )
+            db.add(sup)
+
+        try:
+            from app.services.notification_service import broadcast_notification
+            broadcast_notification(
+                db=db,
+                title="New Supplier Registration 🏢",
+                message=f"Supplier '{company_name}' ({email_clean}) has registered and is pending KYC verification.",
+                notification_type="info",
+                action_url="/suppliers",
+                reference_id=email_clean,
+                reference_type="supplier"
+            )
+        except Exception:
+            pass
+
     db.commit()
     db.refresh(user)
 
