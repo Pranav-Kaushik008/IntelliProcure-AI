@@ -393,13 +393,13 @@ export default function PurchaseOrdersPage() {
                     <td>{po.issued_at ? new Date(po.issued_at).toLocaleDateString() : "Not Issued"}</td>
                     <td>
                       <span className={`badge badge-${
-                        po.status === "issued"    ? "success" :
-                        po.status === "invoiced"  ? "warning" :
-                        po.status === "paid"      ? "success" :
-                        po.status === "cancelled" ? "danger"  : "gray"
+                        (po.status === "issued")                                                        ? "success" :
+                        (po.status === "invoiced" || po.status === "acknowledged" || po.status === "fully_received") ? "warning" :
+                        (po.status === "paid")                                                         ? "success" :
+                        (po.status === "cancelled")                                                    ? "danger"  : "gray"
                       }`}>
-                        {po.status === "paid"      ? "Paid"
-                          : po.status === "invoiced"  ? "Invoiced"
+                        {(po.status === "invoiced" || po.status === "acknowledged" || po.status === "fully_received") ? "Invoiced"
+                          : po.status === "paid"      ? "Paid"
                           : po.status === "issued"    ? "Issued"
                           : po.status === "cancelled" ? "Cancelled"
                           : po.status ? po.status.charAt(0).toUpperCase() + po.status.slice(1)

@@ -543,18 +543,26 @@ async def resync_po_statuses(
     """Admin-only: Resync all PO statuses based on their linked invoices."""
     updated = []
 
-    # Find POs that have a linked invoice
-    invoices = db.query(Invoice).filter(Invoice.is_deleted == False, Invoice.purchase_order_id != None).all()
+    # Fix POs with acknowledged or fully_received status → invoiced
+    stale_statuses = [POStatus.ACKNOWLEDGED, POStatus.FULLY_RECEIVED]
+    stale_pos = db.query(PurchaseOrder).filter(
+        PurchaseOrder.is_deleted == False,
+        PurchaseOrder.status.in_(stale_statuses)
+    ).all()
+    for po in stale_pos:
+        po.status = POStatus.INVOICED
+        updated.append({"po": po.po_number, "new_status": "invoiced (from acknowledged/fully_received)"})
 
+    # Fix POs that have a linked invoice but still show issued
+    invoices = db.query(Invoice).filter(Invoice.is_deleted == False, Invoice.purchase_order_id != None).all()
     for inv in invoices:
         po = db.query(PurchaseOrder).filter(PurchaseOrder.id == inv.purchase_order_id, PurchaseOrder.is_deleted == False).first()
         if not po:
             continue
-
         if inv.status == InvoiceStatus.PAID and po.status != POStatus.PAID:
             po.status = POStatus.PAID
             updated.append({"po": po.po_number, "new_status": "paid"})
-        elif inv.status != InvoiceStatus.PAID and po.status not in [POStatus.PAID, POStatus.CANCELLED] and po.status == POStatus.ISSUED:
+        elif inv.status != InvoiceStatus.PAID and po.status not in [POStatus.PAID, POStatus.CANCELLED, POStatus.INVOICED]:
             po.status = POStatus.INVOICED
             updated.append({"po": po.po_number, "new_status": "invoiced"})
 
