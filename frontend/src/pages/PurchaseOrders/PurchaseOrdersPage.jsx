@@ -378,12 +378,24 @@ export default function PurchaseOrdersPage() {
                     <td>{po.issued_at ? new Date(po.issued_at).toLocaleDateString() : "Not Issued"}</td>
                     <td>
                       <span className={`badge badge-${
-                        po.status === "issued" ? "success" :
-                        po.status === "approved" ? "primary" :
-                        po.status === "pending_approval" ? "warning" :
-                        po.status === "rejected" || po.status === "cancelled" ? "danger" : "gray"
-                      }`} style={{ textTransform: "capitalize" }}>
-                        {po.status.replace("_", " ")}
+                        (() => {
+                          switch (po.status?.toLowerCase()) {
+                            case "issued":         return "success";
+                            case "acknowledged":   return "info";
+                            case "fully_received": return "primary";
+                            case "invoiced":       return "warning";
+                            case "paid":           return "success";
+                            case "cancelled":      return "danger";
+                            case "rejected":       return "danger";
+                            case "closed":         return "gray";
+                            default:               return "gray";
+                          }
+                        })()
+                      }`}>
+                        {po.status === "fully_received" ? "Fully Received"
+                          : po.status === "pending_approval" ? "Pending Approval"
+                          : po.status ? po.status.charAt(0).toUpperCase() + po.status.slice(1)
+                          : "Unknown"}
                       </span>
                     </td>
                     <td>
