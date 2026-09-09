@@ -547,11 +547,20 @@ async def cancel_po(
     if not po:
         raise HTTPException(status_code=404, detail="Purchase order not found")
 
-    if po.status in [POStatus.INVOICED, POStatus.PAID, POStatus.CANCELLED]:
-        raise HTTPException(status_code=400, detail=f"Cannot cancel PO in '{po.status}' status.")
+    if po.status == POStatus.CANCELLED:
+        raise HTTPException(status_code=400, detail="Purchase Order is already cancelled.")
 
     po.status = POStatus.CANCELLED
     db.commit()
+
+    AuditService.log_event(
+        db=db,
+        action="PO_CANCELLED",
+        entity_type="purchase_order",
+        entity_id=po.po_number,
+        user_id=current_user.id
+    )
+
     return {"message": f"Purchase Order {po.po_number} cancelled.", "status": "cancelled"}
 
 

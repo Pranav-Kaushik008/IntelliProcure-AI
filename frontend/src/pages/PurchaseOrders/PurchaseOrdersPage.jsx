@@ -447,7 +447,7 @@ export default function PurchaseOrdersPage() {
                           </button>
                         )}
 
-                        {po.status === "issued" && (
+                        {po.status !== "cancelled" && po.status !== "rejected" && (
                           <button className="btn btn-danger btn-sm" style={{ background: "#ef4444", color: "#fff", border: "none" }} onClick={() => handleCancelPO(po)} title="Cancel PO">
                             <MdCancel /> Cancel
                           </button>
