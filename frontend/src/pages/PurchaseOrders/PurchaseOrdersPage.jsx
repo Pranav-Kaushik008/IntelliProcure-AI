@@ -340,9 +340,9 @@ export default function PurchaseOrdersPage() {
           <option value="">All Statuses</option>
           <option value="draft">Draft</option>
           <option value="pending_approval">Pending Approval</option>
-          <option value="approved">Approved</option>
-          <option value="issued">Issued / Sent</option>
-          <option value="rejected">Rejected</option>
+          <option value="issued">Issued</option>
+          <option value="invoiced">Invoiced</option>
+          <option value="paid">Paid</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
@@ -359,10 +359,10 @@ export default function PurchaseOrdersPage() {
         </div>
       )}
 
-      {/* Orders Table */}
+      {/* Main Table */}
       <div className="card">
-        <div style={{ overflowX: "auto" }}>
-          <table className="data-table">
+        <div className="table-responsive">
+          <table className="table">
             <thead>
               <tr>
                 <th>PO Number</th>
@@ -376,9 +376,26 @@ export default function PurchaseOrdersPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>Loading purchase orders...</td></tr>
-              ) : !serverOrders || serverOrders.length === 0 ? (
-                <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>No purchase orders found. Click <strong>Create New PO</strong> to issue an order.</td></tr>
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)" }}>
+                    Loading purchase orders...
+                  </td>
+                </tr>
+              ) : (!serverOrders || serverOrders.length === 0) ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "48px 0" }}>
+                    <div style={{ fontSize: 36, marginBottom: 12 }}>📦</div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>No Purchase Orders Found</h3>
+                    <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                      {search || statusFilter ? "Try adjusting your filters" : "Create a new purchase order to get started"}
+                    </p>
+                    {canCreateProcurement && !search && !statusFilter && (
+                      <button className="btn btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
+                        <MdAdd fontSize={18} /> Create First PO
+                      </button>
+                    )}
+                  </td>
+                </tr>
               ) : (
                 serverOrders.map((po) => (
                   <tr key={po.id}>
@@ -393,15 +410,18 @@ export default function PurchaseOrdersPage() {
                     <td>{po.issued_at ? new Date(po.issued_at).toLocaleDateString() : "Not Issued"}</td>
                     <td>
                       <span className={`badge badge-${
-                        (po.status === "issued")                                                        ? "success" :
-                        (po.status === "invoiced" || po.status === "acknowledged" || po.status === "fully_received") ? "warning" :
-                        (po.status === "paid")                                                         ? "success" :
-                        (po.status === "cancelled")                                                    ? "danger"  : "gray"
+                        (po.status === "issued" || po.status === "approved") ? "success" :
+                        (po.status === "invoiced") ? "warning" :
+                        (po.status === "paid") ? "success" :
+                        (po.status === "cancelled" || po.status === "rejected") ? "danger" :
+                        (po.status === "pending_approval") ? "warning" : "gray"
                       }`}>
-                        {(po.status === "invoiced" || po.status === "acknowledged" || po.status === "fully_received") ? "Invoiced"
-                          : po.status === "paid"      ? "Paid"
-                          : po.status === "issued"    ? "Issued"
-                          : po.status === "cancelled" ? "Cancelled"
+                        {(po.status === "invoiced") ? "Invoiced"
+                          : (po.status === "paid") ? "Paid"
+                          : (po.status === "issued" || po.status === "approved") ? "Issued"
+                          : (po.status === "cancelled" || po.status === "rejected") ? "Cancelled"
+                          : (po.status === "pending_approval") ? "Pending Approval"
+                          : (po.status === "draft") ? "Draft"
                           : po.status ? po.status.charAt(0).toUpperCase() + po.status.slice(1)
                           : "Unknown"}
                       </span>
