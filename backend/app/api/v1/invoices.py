@@ -274,6 +274,12 @@ async def create_invoice(
     )
 
     db.add(invoice)
+
+    # Update linked PO status to invoiced
+    if po:
+        po.status = POStatus.INVOICED
+        db.add(po)
+
     db.commit()
     db.refresh(invoice)
 
@@ -554,6 +560,14 @@ async def pay_invoice(
     inv.status = InvoiceStatus.PAID
     inv.paid_amount = inv.total_amount
     inv.paid_date = datetime.utcnow()
+
+    # Update linked PO status to paid
+    if inv.purchase_order_id:
+        po = db.query(PurchaseOrder).filter(PurchaseOrder.id == inv.purchase_order_id).first()
+        if po:
+            po.status = POStatus.PAID
+            db.add(po)
+
     db.commit()
 
     AuditService.log_event(

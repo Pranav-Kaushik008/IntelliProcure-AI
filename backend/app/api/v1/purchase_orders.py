@@ -20,6 +20,7 @@ from app.models.purchase_order_item import PurchaseOrderItem
 from app.models.supplier import Supplier
 from app.models.rfq import RFQ, Quotation
 from app.models.user import User, UserRole
+from app.models.invoice import Invoice, InvoiceStatus
 from app.services.audit_service import AuditService
 
 router = APIRouter()
@@ -532,3 +533,30 @@ async def delete_po(
 
     po.is_deleted = True
     db.commit()
+
+
+@router.post("/resync-status")
+async def resync_po_statuses(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("admin"))
+):
+    """Admin-only: Resync all PO statuses based on their linked invoices."""
+    updated = []
+
+    # Find POs that have a linked invoice
+    invoices = db.query(Invoice).filter(Invoice.is_deleted == False, Invoice.purchase_order_id != None).all()
+
+    for inv in invoices:
+        po = db.query(PurchaseOrder).filter(PurchaseOrder.id == inv.purchase_order_id, PurchaseOrder.is_deleted == False).first()
+        if not po:
+            continue
+
+        if inv.status == InvoiceStatus.PAID and po.status != POStatus.PAID:
+            po.status = POStatus.PAID
+            updated.append({"po": po.po_number, "new_status": "paid"})
+        elif inv.status != InvoiceStatus.PAID and po.status not in [POStatus.PAID, POStatus.CANCELLED] and po.status == POStatus.ISSUED:
+            po.status = POStatus.INVOICED
+            updated.append({"po": po.po_number, "new_status": "invoiced"})
+
+    db.commit()
+    return {"message": f"Resynced {len(updated)} PO(s).", "updated": updated}

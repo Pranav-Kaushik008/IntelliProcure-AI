@@ -20,7 +20,7 @@ import { api } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
 
 export default function PurchaseOrdersPage() {
-  const { canApprovePO, canCreateProcurement, isAuditor, isSupplier } = useAuth();
+  const { canApprovePO, canCreateProcurement, isAuditor, isSupplier, isAdmin } = useAuth();
 
   const queryClient = useQueryClient();
 
@@ -285,6 +285,16 @@ export default function PurchaseOrdersPage() {
     }
   };
 
+  const handleResyncStatus = async () => {
+    try {
+      const res = await api.post("/purchase-orders/resync-status");
+      toast.success(res.data.message || "PO statuses resynced!");
+      queryClient.invalidateQueries(["purchase-orders"]);
+    } catch (e) {
+      toast.error("Resync failed: " + (e.response?.data?.detail || e.message));
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Header */}
@@ -297,6 +307,11 @@ export default function PurchaseOrdersPage() {
           <button className="btn btn-secondary" onClick={() => refetch()} disabled={isFetching}>
             <MdRefresh fontSize={18} /> {isFetching ? "Refreshing..." : "Refresh"}
           </button>
+          {isAdmin && (
+            <button className="btn btn-secondary" onClick={handleResyncStatus} title="Fix PO statuses based on linked invoices">
+              <MdRefresh fontSize={18} /> Resync Status
+            </button>
+          )}
           {canCreateProcurement && (
             <button className="btn btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
               <MdAdd fontSize={18} /> Create New PO
