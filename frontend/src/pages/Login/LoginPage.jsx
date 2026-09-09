@@ -367,7 +367,7 @@ export default function LoginPage() {
         }}
       >
         {/* Brand Header */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 14 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 14, marginBottom: 36 }}>
           <div style={{
             width: 48, height: 48, background: "linear-gradient(135deg, #2563EB 0%, #6366F1 100%)",
             borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
@@ -387,9 +387,9 @@ export default function LoginPage() {
         </div>
 
         {/* Hero Copy */}
-        <div>
+        <div style={{ margin: "20px 0" }}>
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            style={{ fontSize: 42, fontWeight: 800, color: "white", lineHeight: 1.15, marginBottom: 20 }}>
+            style={{ fontSize: 42, fontWeight: 800, color: "white", lineHeight: 1.18, marginBottom: 20 }}>
             Next-Gen<br />
             <span style={{ background: "linear-gradient(135deg, #6366F1, #2563EB)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               Procurement & Spend
