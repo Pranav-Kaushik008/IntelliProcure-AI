@@ -333,16 +333,12 @@ export default function PurchaseOrdersPage() {
         </div>
         <select
           className="form-control"
-          style={{ width: 180 }}
+          style={{ width: 160 }}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="pending_approval">Pending Approval</option>
           <option value="issued">Issued</option>
-          <option value="invoiced">Invoiced</option>
-          <option value="paid">Paid</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
@@ -360,18 +356,18 @@ export default function PurchaseOrdersPage() {
       )}
 
       {/* Main Table */}
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table">
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table className="data-table" style={{ width: "100%", minWidth: 850 }}>
             <thead>
               <tr>
-                <th>PO Number</th>
-                <th>Order Title</th>
-                <th>Supplier</th>
-                <th>Total Value</th>
-                <th>Issued Date</th>
-                <th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th style={{ minWidth: 140, padding: "14px 18px" }}>PO Number</th>
+                <th style={{ minWidth: 200, padding: "14px 18px" }}>Order Title</th>
+                <th style={{ minWidth: 180, padding: "14px 18px" }}>Supplier</th>
+                <th style={{ minWidth: 130, padding: "14px 18px" }}>Total Value</th>
+                <th style={{ minWidth: 120, padding: "14px 18px" }}>Issued Date</th>
+                <th style={{ minWidth: 110, padding: "14px 18px" }}>Status</th>
+                <th style={{ minWidth: 130, padding: "14px 18px", textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -399,34 +395,21 @@ export default function PurchaseOrdersPage() {
               ) : (
                 serverOrders.map((po) => (
                   <tr key={po.id}>
-                    <td style={{ fontWeight: 700, color: "var(--primary)" }}>{po.po_number}</td>
-                    <td style={{ fontWeight: 600 }}>{po.title}</td>
-                    <td>
+                    <td style={{ fontWeight: 700, color: "var(--primary)", padding: "14px 18px" }}>{po.po_number}</td>
+                    <td style={{ fontWeight: 600, padding: "14px 18px" }}>{po.title}</td>
+                    <td style={{ padding: "14px 18px" }}>
                       <span style={{ fontWeight: 600 }}>{po.supplier_name || po.supplier?.company_name}</span>
                     </td>
-                    <td style={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    <td style={{ fontWeight: 800, color: "var(--text-primary)", padding: "14px 18px" }}>
                       ${(po.total_amount || 0).toLocaleString()} {po.currency || "USD"}
                     </td>
-                    <td>{po.issued_at ? new Date(po.issued_at).toLocaleDateString() : "Not Issued"}</td>
-                    <td>
-                      <span className={`badge badge-${
-                        (po.status === "issued" || po.status === "approved") ? "success" :
-                        (po.status === "invoiced") ? "warning" :
-                        (po.status === "paid") ? "success" :
-                        (po.status === "cancelled" || po.status === "rejected") ? "danger" :
-                        (po.status === "pending_approval") ? "warning" : "gray"
-                      }`}>
-                        {(po.status === "invoiced") ? "Invoiced"
-                          : (po.status === "paid") ? "Paid"
-                          : (po.status === "issued" || po.status === "approved") ? "Issued"
-                          : (po.status === "cancelled" || po.status === "rejected") ? "Cancelled"
-                          : (po.status === "pending_approval") ? "Pending Approval"
-                          : (po.status === "draft") ? "Draft"
-                          : po.status ? po.status.charAt(0).toUpperCase() + po.status.slice(1)
-                          : "Unknown"}
+                    <td style={{ padding: "14px 18px" }}>{po.issued_at ? new Date(po.issued_at).toLocaleDateString() : "Not Issued"}</td>
+                    <td style={{ padding: "14px 18px" }}>
+                      <span className={`badge badge-${(po.status === "cancelled" || po.status === "rejected") ? "danger" : "success"}`}>
+                        {(po.status === "cancelled" || po.status === "rejected") ? "Cancelled" : "Issued"}
                       </span>
                     </td>
-                    <td>
+                    <td style={{ padding: "14px 18px" }}>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleViewPO(po)} title="View PO Details">
                           <MdVisibility fontSize={16} /> View
@@ -768,7 +751,7 @@ export default function PurchaseOrdersPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
                   ["Supplier", viewPO.supplier_name || viewPO.supplier?.company_name],
-                  ["Status", viewPO.status],
+                  ["Status", (viewPO.status === "cancelled" || viewPO.status === "rejected") ? "Cancelled" : "Issued"],
                   ["Subtotal", `$${(viewPO.subtotal || 0).toLocaleString()}`],
                   ["Discount Amount", `-$${(viewPO.discount_amount || 0).toLocaleString()}`],
                   ["Tax Amount", `+$${(viewPO.tax_amount || 0).toLocaleString()}`],
