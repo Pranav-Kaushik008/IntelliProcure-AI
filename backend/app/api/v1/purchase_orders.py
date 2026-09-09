@@ -248,9 +248,12 @@ async def create_purchase_order(
 
 
 @router.post("/resync-status")
+@router.post("/resync-status/")
+@router.get("/resync-status")
+@router.get("/resync-status/")
 async def resync_po_statuses(
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("admin"))
+    current_user=Depends(require_roles("admin", "manager", "buyer", "finance"))
 ):
     """Admin-only: Resync all PO statuses based on their linked invoices."""
     updated = []
