@@ -439,7 +439,7 @@ export default function PurchaseOrdersPage() {
                           <MdVisibility fontSize={16} /> View
                         </button>
 
-                        {isSupplier && po.status === "issued" && (
+                        {isSupplier && po.status !== "acknowledged" && po.status !== "cancelled" && po.status !== "rejected" && po.status !== "draft" && (
                           <button
                             className="btn btn-info btn-sm"
                             style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#fff", border: "none" }}
@@ -476,13 +476,13 @@ export default function PurchaseOrdersPage() {
                         )}
 
 
-                        {(po.status === "approved" || po.status === "draft") && (
+                        {(po.status === "approved" || po.status === "draft") && !isSupplier && (
                           <button className="btn btn-primary btn-sm" onClick={() => handleSendPO(po)} title="Issue & Send PO to Supplier">
                             <MdSend /> Send PO
                           </button>
                         )}
 
-                        {po.status !== "cancelled" && po.status !== "rejected" && (
+                        {!isSupplier && po.status !== "cancelled" && po.status !== "rejected" && (
                           <button className="btn btn-danger btn-sm" style={{ background: "#ef4444", color: "#fff", border: "none" }} onClick={() => handleCancelPO(po)} title="Cancel PO">
                             <MdCancel /> Cancel
                           </button>
@@ -832,7 +832,7 @@ export default function PurchaseOrdersPage() {
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
                 <button className="btn btn-secondary" onClick={() => setViewPO(null)}>Close</button>
-                {isSupplier && viewPO.status === "issued" ? (
+                {isSupplier && viewPO.status !== "acknowledged" && viewPO.status !== "cancelled" && viewPO.status !== "rejected" && viewPO.status !== "draft" ? (
                   <button
                     className="btn btn-info"
                     style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#fff", border: "none" }}
@@ -841,7 +841,7 @@ export default function PurchaseOrdersPage() {
                     <MdCheckCircle fontSize={16} /> Acknowledge Order
                   </button>
                 ) : null}
-                {viewPO.status === "approved" || viewPO.status === "draft" ? (
+                {(viewPO.status === "approved" || viewPO.status === "draft") && !isSupplier ? (
                   <button className="btn btn-primary" onClick={() => handleSendPO(viewPO)}>
                     <MdSend /> Issue & Send PO
                   </button>
