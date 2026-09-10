@@ -285,6 +285,19 @@ export default function PurchaseOrdersPage() {
     }
   };
 
+  const handleAcknowledgePO = async (po) => {
+    try {
+      const res = await api.post(`/purchase-orders/${po.id}/acknowledge`);
+      toast.success(res.data.message || `PO ${po.po_number} acknowledged!`);
+      queryClient.invalidateQueries(["purchase-orders"]);
+      if (viewPO && viewPO.id === po.id) {
+        setViewPO({ ...viewPO, status: "acknowledged" });
+      }
+    } catch (e) {
+      toast.error("Failed to acknowledge PO: " + (e.response?.data?.detail || e.message));
+    }
+  };
+
   const handleResyncStatus = async () => {
     try {
       const res = await api.post("/purchase-orders/resync-status");
@@ -333,12 +346,13 @@ export default function PurchaseOrdersPage() {
         </div>
         <select
           className="form-control"
-          style={{ width: 160 }}
+          style={{ width: 170 }}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="">All Statuses</option>
           <option value="issued">Issued</option>
+          <option value="acknowledged">Acknowledged</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
@@ -405,8 +419,18 @@ export default function PurchaseOrdersPage() {
                     </td>
                     <td style={{ padding: "14px 18px" }}>{po.issued_at ? new Date(po.issued_at).toLocaleDateString() : "Not Issued"}</td>
                     <td style={{ padding: "14px 18px" }}>
-                      <span className={`badge badge-${(po.status === "cancelled" || po.status === "rejected") ? "danger" : "success"}`}>
-                        {(po.status === "cancelled" || po.status === "rejected") ? "Cancelled" : "Issued"}
+                      <span className={`badge badge-${
+                        (po.status === "cancelled" || po.status === "rejected") ? "danger" :
+                        po.status === "acknowledged" ? "info" :
+                        po.status === "pending_approval" ? "warning" :
+                        po.status === "draft" ? "gray" :
+                        "success"
+                      }`}>
+                        {(po.status === "cancelled" || po.status === "rejected") ? "Cancelled"
+                          : po.status === "acknowledged" ? "Acknowledged"
+                          : po.status === "pending_approval" ? "Pending Approval"
+                          : po.status === "draft" ? "Draft"
+                          : "Issued"}
                       </span>
                     </td>
                     <td style={{ padding: "14px 18px" }}>
@@ -414,6 +438,17 @@ export default function PurchaseOrdersPage() {
                         <button className="btn btn-ghost btn-sm" onClick={() => handleViewPO(po)} title="View PO Details">
                           <MdVisibility fontSize={16} /> View
                         </button>
+
+                        {po.status === "issued" && (
+                          <button
+                            className="btn btn-info btn-sm"
+                            style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#fff", border: "none" }}
+                            onClick={() => handleAcknowledgePO(po)}
+                            title="Acknowledge Receipt of PO"
+                          >
+                            <MdCheckCircle fontSize={16} /> Acknowledge
+                          </button>
+                        )}
 
                         {po.status === "draft" && (
                           <>
@@ -751,7 +786,7 @@ export default function PurchaseOrdersPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
                   ["Supplier", viewPO.supplier_name || viewPO.supplier?.company_name],
-                  ["Status", (viewPO.status === "cancelled" || viewPO.status === "rejected") ? "Cancelled" : "Issued"],
+                  ["Status", (viewPO.status === "cancelled" || viewPO.status === "rejected") ? "Cancelled" : viewPO.status === "acknowledged" ? "Acknowledged" : "Issued"],
                   ["Subtotal", `$${(viewPO.subtotal || 0).toLocaleString()}`],
                   ["Discount Amount", `-$${(viewPO.discount_amount || 0).toLocaleString()}`],
                   ["Tax Amount", `+$${(viewPO.tax_amount || 0).toLocaleString()}`],
@@ -797,6 +832,15 @@ export default function PurchaseOrdersPage() {
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
                 <button className="btn btn-secondary" onClick={() => setViewPO(null)}>Close</button>
+                {viewPO.status === "issued" ? (
+                  <button
+                    className="btn btn-info"
+                    style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#fff", border: "none" }}
+                    onClick={() => handleAcknowledgePO(viewPO)}
+                  >
+                    <MdCheckCircle fontSize={16} /> Acknowledge Order
+                  </button>
+                ) : null}
                 {viewPO.status === "approved" || viewPO.status === "draft" ? (
                   <button className="btn btn-primary" onClick={() => handleSendPO(viewPO)}>
                     <MdSend /> Issue & Send PO

@@ -255,20 +255,10 @@ async def resync_po_statuses(
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("admin", "manager", "buyer", "finance"))
 ):
-    """Admin-only: Resync all PO statuses based on their linked invoices."""
+    """Resync PO statuses based on their linked invoices and payments."""
     updated = []
 
-    # Fix POs with acknowledged or fully_received status → invoiced
-    stale_statuses = [POStatus.ACKNOWLEDGED, POStatus.FULLY_RECEIVED]
-    stale_pos = db.query(PurchaseOrder).filter(
-        PurchaseOrder.is_deleted == False,
-        PurchaseOrder.status.in_(stale_statuses)
-    ).all()
-    for po in stale_pos:
-        po.status = POStatus.INVOICED
-        updated.append({"po": po.po_number, "new_status": "invoiced (from acknowledged/fully_received)"})
-
-    # Fix POs that have a linked invoice but still show issued
+    # Fix POs that have a linked invoice
     invoices = db.query(Invoice).filter(Invoice.is_deleted == False, Invoice.purchase_order_id != None).all()
     for inv in invoices:
         po = db.query(PurchaseOrder).filter(PurchaseOrder.id == inv.purchase_order_id, PurchaseOrder.is_deleted == False).first()
@@ -277,7 +267,7 @@ async def resync_po_statuses(
         if inv.status == InvoiceStatus.PAID and po.status != POStatus.PAID:
             po.status = POStatus.PAID
             updated.append({"po": po.po_number, "new_status": "paid"})
-        elif inv.status != InvoiceStatus.PAID and po.status not in [POStatus.PAID, POStatus.CANCELLED, POStatus.INVOICED]:
+        elif inv.status != InvoiceStatus.PAID and po.status == POStatus.ISSUED:
             po.status = POStatus.INVOICED
             updated.append({"po": po.po_number, "new_status": "invoiced"})
 
@@ -537,6 +527,55 @@ async def send_po(
         "status": "issued",
         "issued_at": po.issued_at.isoformat()
     }
+
+
+@router.post("/{po_id}/acknowledge")
+async def acknowledge_po(
+    po_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user)
+):
+    """Acknowledge a Purchase Order (Supplier or Internal roles)."""
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id, PurchaseOrder.is_deleted == False).first()
+    if not po:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+
+    user_role = normalize_role(current_user.role)
+    if user_role == "supplier":
+        sup = get_supplier_for_user(current_user, db)
+        if not sup or sup.id != po.supplier_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You can only acknowledge purchase orders issued to your company."
+            )
+
+    if po.status in [POStatus.CANCELLED, POStatus.DRAFT, POStatus.PENDING_APPROVAL, POStatus.REJECTED]:
+        raise HTTPException(status_code=400, detail=f"Cannot acknowledge PO in '{po.status}' status.")
+
+    po.status = POStatus.ACKNOWLEDGED
+    db.commit()
+
+    AuditService.log_event(
+        db=db,
+        action="PO_ACKNOWLEDGED",
+        entity_type="purchase_order",
+        entity_id=po.po_number,
+        user_id=current_user.id
+    )
+
+    # Trigger real-time broadcast notification
+    from app.services.notification_service import broadcast_notification
+    broadcast_notification(
+        db=db,
+        title="Purchase Order Acknowledged 🤝",
+        message=f"PO {po.po_number} has been acknowledged by supplier.",
+        notification_type="info",
+        action_url="/purchase-orders",
+        reference_id=str(po.id),
+        reference_type="purchase_order"
+    )
+
+    return {"message": f"Purchase Order {po.po_number} acknowledged successfully.", "status": "acknowledged"}
 
 
 @router.post("/{po_id}/cancel")
