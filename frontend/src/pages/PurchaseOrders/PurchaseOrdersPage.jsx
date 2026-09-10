@@ -439,7 +439,7 @@ export default function PurchaseOrdersPage() {
                           <MdVisibility fontSize={16} /> View
                         </button>
 
-                        {po.status === "issued" && (
+                        {isSupplier && po.status === "issued" && (
                           <button
                             className="btn btn-info btn-sm"
                             style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#fff", border: "none" }}
@@ -832,7 +832,7 @@ export default function PurchaseOrdersPage() {
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
                 <button className="btn btn-secondary" onClick={() => setViewPO(null)}>Close</button>
-                {viewPO.status === "issued" ? (
+                {isSupplier && viewPO.status === "issued" ? (
                   <button
                     className="btn btn-info"
                     style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#fff", border: "none" }}
