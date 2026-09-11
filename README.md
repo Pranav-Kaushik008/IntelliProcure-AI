@@ -11,35 +11,9 @@
 
 ---
 
-## 🏛️ High-Level System Architecture
 
-```mermaid
-graph TD
-    Client["💻 Client (Browser / PWA)"] -->|HTTPS / WSS| Edge["⚡ Cloud CDN Edge (Vite Static SPA)"]
-    Edge --> ReactApp["⚛️ React 18 + TanStack Query + Framer Motion"]
-    
-    ReactApp -->|REST API (JWT Auth)| FastAPI["⚡ FastAPI Asynchronous Backend (Python 3.12)"]
-    
-    subgraph "IntelliProcure Application Services"
-        FastAPI --> RBAC["🔐 RBAC & JWT Security Engine"]
-        FastAPI --> Sourcing["🛒 Requisitions & RFQ Bidding Engine"]
-        FastAPI --> POEngine["📦 Purchase Order & Acknowledgment Engine"]
-        FastAPI --> Matcher["⚖️ Automated 3-Way Match & Fraud Auditor"]
-        FastAPI --> LegalAI["🤖 AI 6-Clause Legal Contract Extractor"]
-        FastAPI --> SpendAI["📈 Predictive Spend & Anomaly Engine"]
-        FastAPI --> Copilot["✨ AI Copilot Live DB Reasoning Pulse"]
-        FastAPI --> Audit["📜 Immutable SHA-256 Audit Trail"]
-    end
-    
-    subgraph "Data & Persistence Layer"
-        FastAPI -->|SQLAlchemy 2.0 ORM| NeonDB[("🐘 Neon Serverless PostgreSQL 16")]
-        FastAPI --> Vault["📁 Secure Storage Vault (Contracts & Receipts)"]
-    end
-```
 
----
-
-## 🌟 12 Core Enterprise Modules
+## 🌟 Core Enterprise Modules
 
 ### 1. 📊 Executive KPI Dashboard & Real-Time Pulse
 - Real-time spend velocity aggregation, savings KPIs, open tender counts, and compliance ratings.
