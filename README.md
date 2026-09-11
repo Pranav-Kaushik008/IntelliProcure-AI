@@ -91,14 +91,14 @@
 
 | Role | Email Address | Password |
 |---|---|---|
-| **Master Executive Admin** | `pranavkaushikyr@gmail.com` | `Admin@1234` |
-| **Procurement Buyer** | `buyer@intelliprocure.ai` | `Buyer@1234` |
-| **Department Manager** | `manager@intelliprocure.ai` | `Manager@1234` |
-| **Finance Specialist** | `finance@intelliprocure.ai` | `Finance@1234` |
-| **Compliance Auditor** | `auditor@intelliprocure.ai` | `Auditor@1234` |
-| **Supplier (TechCore)** | `orders@techcore.com` | `Supplier@1234` |
-| **Supplier (GlobalSupply)** | `procurement@globalsupply.com` | `Supplier@1234` |
-| **Supplier (Apex Facilities)** | `contracts@apexfacilities.com` | `Supplier@1234` |
+| **Master Executive Admin** | `pranav****@gmail.com` | `****` |
+| **Procurement Buyer** | `buyer@intelliprocure.ai` | `****` |
+| **Department Manager** | `manager@intelliprocure.ai` | `****` |
+| **Finance Specialist** | `finance@intelliprocure.ai` | `****` |
+| **Compliance Auditor** | `auditor@intelliprocure.ai` | `****` |
+| **Supplier (TechCore)** | `orders@techcore.com` | `****` |
+| **Supplier (GlobalSupply)** | `procurement@globalsupply.com` | `****` |
+| **Supplier (Apex Facilities)** | `contracts@apexfacilities.com` | `****` |
 
 ---
 
