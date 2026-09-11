@@ -92,13 +92,13 @@
 | Role | Email Address | Password |
 |---|---|---|
 | **Master Executive Admin** | `pranav****@gmail.com` | `****` |
-| **Procurement Buyer** | `buyer@intelliprocure.ai` | `****` |
-| **Department Manager** | `manager@intelliprocure.ai` | `****` |
-| **Finance Specialist** | `finance@intelliprocure.ai` | `****` |
-| **Compliance Auditor** | `auditor@intelliprocure.ai` | `****` |
-| **Supplier (TechCore)** | `orders@techcore.com` | `****` |
-| **Supplier (GlobalSupply)** | `procurement@globalsupply.com` | `****` |
-| **Supplier (Apex Facilities)** | `contracts@apexfacilities.com` | `****` |
+| **Procurement Buyer** | `buyer@****` | `****` |
+| **Department Manager** | `manager@****` | `****` |
+| **Finance Specialist** | `finance@****` | `****` |
+| **Compliance Auditor** | `auditor@****` | `****` |
+| **Supplier (TechCore)** | `orders@****` | `****` |
+| **Supplier (GlobalSupply)** | `procurement@****` | `****` |
+| **Supplier (Apex Facilities)** | `contracts@****` | `****` |
 
 ---
 
